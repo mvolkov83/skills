@@ -28,17 +28,17 @@ In any Claude Code session:
 
 ```
 /plugin marketplace add mvolkov83/skills
-/plugin install sqlalchemy-best-practices@skills
-/plugin install fastapi-best-practices@skills
-/plugin install pytest-best-practices@skills
-/plugin install grpc-python-best-practices@skills
-/plugin install git-workflow-best-practices@skills
+/plugin install sqlalchemy-best-practices@mvolkov-skills
+/plugin install fastapi-best-practices@mvolkov-skills
+/plugin install pytest-best-practices@mvolkov-skills
+/plugin install grpc-python-best-practices@mvolkov-skills
+/plugin install git-workflow-best-practices@mvolkov-skills
 /reload-plugins
 ```
 
 That's it. Run a SQLAlchemy/FastAPI/pytest/gRPC question and the relevant skill auto-triggers.
 
-> **Heads up on the alias**: the install alias (`@skills` above) is what Claude Code reports after `/plugin marketplace add` — usually the basename of the repo URL, occasionally truncated. If `/plugin install ...@skills` fails with "marketplace not found", check the exact alias the system printed and retry.
+> **Heads up on the alias**: the install alias (`@mvolkov-skills`) is the `name` field from `.claude-plugin/marketplace.json` — **not** the basename of the repo URL. Claude Code reports the actual alias after `/plugin marketplace add` ("Successfully added marketplace: `<alias>`"); use exactly that. If you see "marketplace not found" on install, double-check the alias from that line.
 
 ---
 
@@ -122,7 +122,7 @@ Sync `grpcio`, Pydantic v1 (`Config` inner class, `@validator`), SQLAlchemy 1.x 
 ## Update
 
 ```
-/plugin marketplace update skills
+/plugin marketplace update mvolkov-skills
 /reload-plugins
 ```
 
@@ -133,13 +133,13 @@ Pulls the latest commits and reloads. No re-install needed.
 A specific plugin:
 
 ```
-/plugin uninstall <plugin-name>@skills
+/plugin uninstall <plugin-name>@mvolkov-skills
 ```
 
 Or remove the marketplace entirely (uninstalls all plugins from it):
 
 ```
-/plugin marketplace remove skills
+/plugin marketplace remove mvolkov-skills
 ```
 
 ---

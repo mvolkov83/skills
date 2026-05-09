@@ -2,7 +2,7 @@
   "name": "sqlalchemy-best-practices",
   "description": "SQLAlchemy 2.0 async-first best practices — engine and pool config, Mapped[T] models, relationship loading strategies (selectin/select/write_only), query optimization, async sessions and transactions, FastAPI dependency injection",
   "author": {
-    "name": "Volkov Mykhailo",
-    "email": "mvolkov@betinsight.games"
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
   }
 }

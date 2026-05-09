@@ -2,7 +2,7 @@
   "name": "grpc-python-best-practices",
   "description": "Python gRPC async-first Kubernetes-native best practices using grpc.aio — server bootstrap with graceful shutdown, shared per-process channel factory, canonical decorator pattern for cross-cutting concerns, max_connection_age_* for HPA rebalancing, client-side LB via dns:/// + round_robin over a headless Service (no service mesh), ERROR_MAP + rich google.rpc.Status error model, client-side translation hierarchy",
   "author": {
-    "name": "Volkov Mykhailo",
-    "email": "mvolkov@betinsight.games"
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
   }
 }

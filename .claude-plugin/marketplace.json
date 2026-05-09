@@ -3,16 +3,16 @@
   "name": "mvolkov-skills",
   "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), and git workflow",
   "owner": {
-    "name": "Volkov Mykhailo",
-    "email": "mvolkov@betinsight.games"
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
   },
   "plugins": [
     {
       "name": "sqlalchemy-best-practices",
       "description": "SQLAlchemy 2.0 async-first best practices — engine and pool config, Mapped[T] models, relationship loading strategies (selectin/select/write_only), query optimization, async sessions and transactions, FastAPI dependency injection",
       "author": {
-        "name": "Volkov Mykhailo",
-        "email": "mvolkov@betinsight.games"
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
       },
       "category": "development",
       "source": "./plugins/sqlalchemy-best-practices"
@@ -21,8 +21,8 @@
       "name": "fastapi-best-practices",
       "description": "FastAPI production best practices — domain-organized project structure, async correctness (no blocking I/O, no CPU work in BackgroundTasks), DI patterns with per-request caching and chaining, Pydantic v2 split create/update/response models, Pydantic Settings v2 with .env and lru_cache, async testing with httpx.AsyncClient",
       "author": {
-        "name": "Volkov Mykhailo",
-        "email": "mvolkov@betinsight.games"
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
       },
       "category": "development",
       "source": "./plugins/fastapi-best-practices"
@@ -31,8 +31,8 @@
       "name": "pytest-best-practices",
       "description": "pytest async-first testing best practices — test layer structure (unit/integration/e2e), fixture design with proper scope, async testing with pytest-asyncio (asyncio_mode=auto), test data with factory_boy + faker, HTTP mocking with respx, time mocking with freezegun, property-based with hypothesis, DB transaction-rollback isolation, flush() pattern for chained DB fixtures, pytest-xdist parallelism",
       "author": {
-        "name": "Volkov Mykhailo",
-        "email": "mvolkov@betinsight.games"
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
       },
       "category": "development",
       "source": "./plugins/pytest-best-practices"
@@ -41,8 +41,8 @@
       "name": "grpc-python-best-practices",
       "description": "Python gRPC async-first Kubernetes-native best practices using grpc.aio — server bootstrap with graceful shutdown that flips Health to NOT_SERVING before server.stop(), shared per-process channel factory, canonical decorator pattern (@grpc_logger + @grpc_error_handler) for cross-cutting concerns, max_connection_age_* triad for HPA rebalancing, client-side LB via dns:/// + round_robin + service config JSON over a Kubernetes headless Service (no service mesh), ERROR_MAP + google.rpc.Status rich error model, client-side translation hierarchy",
       "author": {
-        "name": "Volkov Mykhailo",
-        "email": "mvolkov@betinsight.games"
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
       },
       "category": "development",
       "source": "./plugins/grpc-python-best-practices"
@@ -51,8 +51,8 @@
       "name": "git-workflow-best-practices",
       "description": "Git workflow best practices — Git Flow branch prefixes (feature/bugfix/hotfix/release), Conventional Commits format with feat/fix/docs/style/refactor/test/chore types, atomic commits with imperative mood, pre-commit hygiene (tests/diff/lint/no-debug/no-secrets), pull --rebase before push, no force-push to shared branches, max ~400 LOC per PR, self-review first, squash on merge for clean main history",
       "author": {
-        "name": "Volkov Mykhailo",
-        "email": "mvolkov@betinsight.games"
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
       },
       "category": "development",
       "source": "./plugins/git-workflow-best-practices"

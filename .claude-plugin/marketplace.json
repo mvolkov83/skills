@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mvolkov-skills",
-  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), and git workflow",
+  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, and OpenTelemetry observability",
   "owner": {
     "name": "Mykhailo Volkov",
     "email": "mvolkov83@gmail.com"
@@ -56,6 +56,16 @@
       },
       "category": "development",
       "source": "./plugins/git-workflow-best-practices"
+    },
+    {
+      "name": "observability-best-practices",
+      "description": "Python observability best practices using OpenTelemetry — SDK bootstrap with off-switch contract and idempotency guard, auto-instrumentation (gRPC/SQLAlchemy/FastAPI/Logging), the LoggingInstrumentor + structlog correlation pattern with custom log hook and CleanLoggingHandler, two-tier log field taxonomy, span attribute conventions with <service>.<key> prefix for cross-service Tempo search, sensitive-field redaction at the serialization boundary, status taxonomy, metrics cardinality control, tail-based sampling, and Sentry-with-OTel integration",
+      "author": {
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
+      },
+      "category": "development",
+      "source": "./plugins/observability-best-practices"
     }
   ]
 }

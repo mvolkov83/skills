@@ -1,0 +1,8 @@
+{
+  "name": "observability-best-practices",
+  "description": "Python observability best practices using OpenTelemetry — SDK bootstrap with off-switch contract and idempotency guard, auto-instrumentation (gRPC / SQLAlchemy / FastAPI / Logging), the LoggingInstrumentor + structlog correlation pattern with custom log hook and CleanLoggingHandler, two-tier log field taxonomy, span attribute conventions with <service>.<key> prefix for cross-service Tempo search, sensitive-field redaction at the serialization boundary, status taxonomy, metrics cardinality control, tail-based sampling, and Sentry-with-OTel integration",
+  "author": {
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
+  }
+}

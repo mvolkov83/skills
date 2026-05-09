@@ -1,0 +1,8 @@
+{
+  "name": "money-and-payments-best-practices",
+  "description": "Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (client-driven idempotency_key + chain-CAS for state transitions, never conflated), double-entry ledger architecture (Accounts + Transfers, debit=credit invariant at DB level, append-only, balance computed not stored), two-phase transfers via HOLD balance, atomic chains for composite operations, transaction state machines with optimistic concurrency control, external payment provider integration via stateless proxy + sync request + async webhook with three-layer dedup, reversibility via separate transaction with parent_transaction_id, and DB-enforced invariants",
+  "author": {
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
+  }
+}

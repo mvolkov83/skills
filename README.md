@@ -1,6 +1,6 @@
 # mvolkov-skills
 
-> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, and OpenTelemetry observability**.
+> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering**.
 
 If you're using Claude Code on Python projects with this stack, these skills make Claude consistent with conventions the team has already converged on, without bloating your context. Each skill lazy-loads only when relevant — no cost on conversations where it doesn't apply.
 
@@ -8,7 +8,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 
 ## What's inside
 
-6 standalone skills. Install only what you need:
+7 standalone skills. Install only what you need:
 
 | Plugin | Triggers on | Adds guidance for |
 |---|---|---|
@@ -18,6 +18,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 | **[`grpc-python-best-practices`](plugins/grpc-python-best-practices/skills/grpc-python-best-practices/SKILL.md)** | `grpc.aio.*`, `*_pb2.py` / `*_pb2_grpc.py` files, `.proto` files, `ServerInterceptor`, `UnaryUnaryClientInterceptor` | gRPC `grpc.aio` Kubernetes-native — server bootstrap with health-drain, shared channel factory, decorator pattern (`@grpc_logger` + `@grpc_error_handler`), `max_connection_age_*` for HPA rebalancing, client-side LB via `dns:///` + `round_robin`, ERROR_MAP with rich `google.rpc.Status` |
 | **[`git-workflow-best-practices`](plugins/git-workflow-best-practices/skills/git-workflow-best-practices/SKILL.md)** | `git commit`, `git push`, `gh pr create`, branch creation, PR review prep, commit message writing | Git Flow branches, Conventional Commits, atomic commits with imperative mood, pre-commit hygiene, `pull --rebase`, force-push scope, ~400 LOC PR target, squash on merge |
 | **[`observability-best-practices`](plugins/observability-best-practices/skills/observability-best-practices/SKILL.md)** | imports of `opentelemetry.*`, `setup_telemetry()` calls, `tracer.start_as_current_span()`, `LoggingInstrumentor`, span attribute setting, structlog with `trace_id` binding, OTLP exporter config, Loki / Tempo / Grafana / Sentry integration | Python OpenTelemetry — SDK bootstrap with off-switch + idempotency guard, auto-instrumentation (gRPC / SQLAlchemy / FastAPI / Logging), `LoggingInstrumentor` + structlog correlation, two-tier log field taxonomy, `<service>.<key>` span attributes, sensitive-field redaction, metrics cardinality control, tail-based sampling, Sentry-with-OTel |
+| **[`money-and-payments-best-practices`](plugins/money-and-payments-best-practices/skills/money-and-payments-best-practices/SKILL.md)** | imports of `decimal.Decimal`, money libraries (`py-money` / `dinero` / `stockholm` / `moneyed`), code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Account` / `Balance` ORM models, payment / charge / refund / chargeback handlers, idempotency_key handling, PSP webhook code, `parent_transaction_id` references | Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (`idempotency_key` + chain CAS, never conflated), double-entry ledger (Accounts + Transfers, append-only, balance computed not stored), two-phase transfers via HOLD, atomic chains, OCC state machines, stateless proxy for PSP integration with three-layer webhook dedup, reversibility via separate transaction with `parent_transaction_id`, DB-enforced invariants |
 
 Each skill is **depersonalized** — generic placeholder names (`MyService`, `MyServiceClient`, `MyServiceError`) instead of project-specific symbols. Patterns are anchored in real production code but written to apply across any project that follows the same stack.
 
@@ -35,10 +36,11 @@ In any Claude Code session:
 /plugin install grpc-python-best-practices@mvolkov-skills
 /plugin install git-workflow-best-practices@mvolkov-skills
 /plugin install observability-best-practices@mvolkov-skills
+/plugin install money-and-payments-best-practices@mvolkov-skills
 /reload-plugins
 ```
 
-That's it. Run a SQLAlchemy / FastAPI / pytest / gRPC / OTel question and the relevant skill auto-triggers.
+That's it. Run a SQLAlchemy / FastAPI / pytest / gRPC / OTel / payments question and the relevant skill auto-triggers.
 
 > **Heads up on the alias**: the install alias (`@mvolkov-skills`) is the `name` field from `.claude-plugin/marketplace.json` — **not** the basename of the repo URL. Claude Code reports the actual alias after `/plugin marketplace add` ("Successfully added marketplace: `<alias>`"); use exactly that. If you see "marketplace not found" on install, double-check the alias from that line.
 
@@ -65,6 +67,9 @@ Skills fire on substantive design / review / debugging work where conventions ma
 | "What's the right commit message for this refactor?" | `git-workflow-best-practices` |
 | "Why is `LoggingInstrumentor` breaking my structlog format?" | `observability-best-practices` |
 | "How do I set span attributes so I can search by transaction_id in Tempo?" | `observability-best-practices` |
+| "Should I use `Decimal` or store amounts as integer cents?" | `money-and-payments-best-practices` |
+| "Two requests with the same `idempotency_key` arrived — what's the right behaviour?" | `money-and-payments-best-practices` |
+| "How do I model refunds — mutate the original transaction or create a new one?" | `money-and-payments-best-practices` |
 | "Read this file and summarize" | (none — too simple, Claude handles directly) |
 | "Generate a Django REST view" | (none — wrong stack, all skills explicitly skip non-FastAPI / non-SQLAlchemy frameworks) |
 
@@ -120,6 +125,22 @@ If you want to verify a skill triggered, ask Claude directly: *"Did `<skill-name
 
 Cross-references `grpc-python-best-practices` (decorator chain), `fastapi-best-practices` (FastAPIInstrumentor), `sqlalchemy-best-practices` (SQLAlchemyInstrumentor).
 
+### `money-and-payments-best-practices`
+
+47 rules across 11 sections — engineering best practices for money / payments / ledger systems. Anchored in two canonical public references: [Stripe's idempotency engineering](https://stripe.com/blog/idempotency) and [TigerBeetle's debit/credit model](https://docs.tigerbeetle.com/concepts/debit-credit/). Highlights:
+
+- **Money is `Decimal` or integer minor units, never `float`** — `0.1 + 0.2 == 0.30000000000000004` is a one-line argument; downstream calculations diverge across systems that should reconcile to zero.
+- **The two-layer idempotency model** — client-driven `idempotency_key` (request dedup, silent return on replay, 422 on payload mismatch) vs chain-CAS via `UNIQUE(aggregate_id, parent_id)` (concurrent state-transition serialisation, fail-loud on conflict). Different problems; **never conflated**.
+- **Idempotency keys are client-generated, never server-side** — server-generated keys can't survive network timeouts; the canonical Stripe pattern.
+- **Double-entry: Accounts + Transfers, append-only, balance computed from entries** — DB-enforced invariants (`CHECK (balance >= 0 OR account_type IN ('LIABILITY', 'EQUITY'))`), not application-enforced.
+- **Two-phase via `HOLD` for outbound flows** — Reserve at intent commit (closes the fraud window), Commit XOR Release on terminal transition. Singleton HOLD per `(account, currency)`.
+- **Atomic chains for composite operations** — fee-with-transfer, multi-leg settlement as one DB transaction; no two-phase commit across services.
+- **Transaction state machines with chain-CAS OCC** — append-only state log, `parent_id` linkage, atomic `INSERT ... SELECT` tip-and-CAS, `READ COMMITTED` (no `SERIALIZABLE`, no `SELECT FOR UPDATE`). Hash-chain over the log for primary audit.
+- **PSP integration via stateless proxy/facade** — credentials in the application service, proxy stateless. Sync request + async webhook + `QueryStatus` fallback. Three-layer webhook dedup (signature → DB UNIQUE → handler idempotency).
+- **Reversals are separate transactions with `parent_transaction_id` link** — direction inversion, atomic chain CAS on the parent's state log, mutual exclusion on concurrent recall attempts.
+
+Cross-references `sqlalchemy-best-practices` (ledger / journal table design), `grpc-python-best-practices` (sync RPC + async webhook architecture), `observability-best-practices` (hash-chain as primary audit, structured logs as defense-in-depth), `pytest-best-practices` (property-based testing for money invariants, real-DB ledger tests).
+
 ---
 
 ## Stack assumptions
@@ -133,6 +154,7 @@ The patterns are tuned for an async-first modern Python backend:
 - **gRPC**: `grpcio` + `grpcio-tools` + `grpcio-health-checking` + `grpcio-status`
 - **Kubernetes** deployment (gRPC LB section assumes k8s + headless Services; non-k8s use cases still get value from the rest)
 - **OpenTelemetry**: `opentelemetry-api/sdk` + OTLP HTTP exporters + `opentelemetry-instrumentation-{grpc,sqlalchemy,fastapi,logging}`; structlog for structured logging; Loki + Tempo + Mimir or Grafana Cloud as the typical backend
+- **Money handling** (when applicable): `Decimal` from stdlib **or** integer minor units (Stripe pattern); a money library (`py-money`, `dinero`, `stockholm`, `moneyed`) for non-trivial arithmetic; PostgreSQL `UNIQUE` and partial `UNIQUE` constraints as the database-level guards for idempotency and chain-CAS
 
 Sync `grpcio`, Pydantic v1 (`Config` inner class, `@validator`), SQLAlchemy 1.x (`Column()`, `session.query()`) are explicitly **legacy**. When skills see those patterns in code, they suggest the modern equivalent and explain why.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mvolkov-skills",
-  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, and OpenTelemetry observability",
+  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, OpenTelemetry observability, and money / payments / ledger engineering",
   "owner": {
     "name": "Mykhailo Volkov",
     "email": "mvolkov83@gmail.com"
@@ -66,6 +66,16 @@
       },
       "category": "development",
       "source": "./plugins/observability-best-practices"
+    },
+    {
+      "name": "money-and-payments-best-practices",
+      "description": "Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (client-driven idempotency_key + chain-CAS for state transitions, never conflated), double-entry ledger architecture (Accounts + Transfers, debit=credit invariant at DB level, append-only, balance computed not stored), two-phase transfers via HOLD balance, atomic chains for composite operations, transaction state machines with optimistic concurrency control, external payment provider integration via stateless proxy + sync request + async webhook with three-layer dedup, reversibility via separate transaction with parent_transaction_id, and DB-enforced invariants",
+      "author": {
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
+      },
+      "category": "development",
+      "source": "./plugins/money-and-payments-best-practices"
     }
   ]
 }

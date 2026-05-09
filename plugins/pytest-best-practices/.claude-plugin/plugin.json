@@ -1,0 +1,8 @@
+{
+  "name": "pytest-best-practices",
+  "description": "pytest async-first testing best practices — test layer structure, fixture design, async testing with pytest-asyncio, test data with factory_boy + faker, HTTP mocking with respx, time mocking with freezegun, property-based testing with hypothesis, DB transaction-rollback isolation, flush() pattern for chained fixtures, pytest-xdist parallelism",
+  "author": {
+    "name": "Volkov Mykhailo",
+    "email": "mvolkov@betinsight.games"
+  }
+}

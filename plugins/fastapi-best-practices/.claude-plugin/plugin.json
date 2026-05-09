@@ -1,0 +1,8 @@
+{
+  "name": "fastapi-best-practices",
+  "description": "FastAPI production best practices — domain-organized project structure, async correctness, DI patterns with per-request caching and chaining, Pydantic v2 split create/update/response models, Pydantic Settings v2, async testing with httpx.AsyncClient",
+  "author": {
+    "name": "Volkov Mykhailo",
+    "email": "mvolkov@betinsight.games"
+  }
+}

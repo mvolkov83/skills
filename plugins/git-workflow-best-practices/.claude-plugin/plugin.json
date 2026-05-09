@@ -1,0 +1,8 @@
+{
+  "name": "git-workflow-best-practices",
+  "description": "Git workflow best practices — Git Flow branch prefixes, Conventional Commits format, atomic commits with imperative mood, pre-commit hygiene, pull --rebase before push, no force-push to shared branches, max ~400 LOC per PR, squash on merge for clean main history",
+  "author": {
+    "name": "Volkov Mykhailo",
+    "email": "mvolkov@betinsight.games"
+  }
+}

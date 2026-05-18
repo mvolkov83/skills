@@ -1,6 +1,6 @@
 ---
 name: money-and-payments-best-practices
-description: Engineering best practices for systems that handle money, payments, and ledgers — money representation (`Decimal` or integer minor units, never `float`; currency code as separate field; explicit rounding modes), the two-layer idempotency model (client-driven `idempotency_key` for request dedup AND chain-CAS for state transitions — they are distinct concerns and must never be mixed), double-entry ledger architecture (Accounts + Transfers as canonical entities, debit=credit invariant enforced at the database level, append-only immutable history, balance computed from entries — never stored), two-phase transfers (single-phase for funds inbound to user, two-phase via `HOLD` balance for funds outbound — `Reserve → Commit | Release` with mutual exclusion), atomic chains for composite operations (transfer-with-fee, multi-leg settlements as one DB transaction), transaction state machines with optimistic concurrency control via append-only state log + `UNIQUE(aggregate_id, parent_id)` chain CAS (no `SELECT FOR UPDATE`, no `SERIALIZABLE`, no `version int` column), external payment provider integration via stateless proxy/facade pattern with sync request + async webhook callback architecture (signature verification, three-layer dedup via webhook event ids, `QueryStatus` fallback for timeout reconciliation), reversibility via separate transaction with `parent_transaction_id` link and direction inversion, and DB-enforced invariants (UNIQUE constraints for both idempotency keys and chain CAS, partial UNIQUE for webhook event dedup, CHECK constraints for non-negative balances, foreign key integrity). Use this skill whenever the user is writing, reviewing, debugging, or designing money-handling code in a Python backend — including any work involving `Decimal` arithmetic on monetary amounts, currency conversion, idempotency key handling, payment intent / charge / refund / chargeback flows, ledger or journal table design, account balance computation, payment provider (PSP) integration with webhooks, transaction state machines with terminal states, refund / void / recall / chargeback patterns, optimistic concurrency control with append-only logs, parent-child transaction relationships, payment hash-chain audit trails, or compliance-grade financial audit. Trigger on imports of `decimal.Decimal`, money libraries (`py-money`, `dinero`, `stockholm`, `moneyed`), code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Entry` / `Account` / `Balance` ORM models, payment-related proto / gRPC services, PSP webhook handlers, refund or chargeback handlers, or any database migration touching financial tables. Do NOT use for inventory management without payment flow, generic CRUD apps without ledger semantics, frontend payment form UI rendering, cryptocurrency-only systems with UTXO models (different patterns), tax computation engines (jurisdiction-specific encyclopedia), or KYC / onboarding flows (separate concern).
+description: Engineering best practices for systems that handle money, payments, and ledgers — money representation (`Decimal` or integer minor units, never `float`; currency code as separate field; explicit rounding modes), the two-layer idempotency model (client-driven `idempotency_key` for request dedup AND chain-CAS for state transitions — they are distinct concerns and must never be mixed), deterministic ID derivation for stateless proxies and bridges where the upstream protocol lacks an idempotency-key field (`generation forbidden, derivation allowed` — synthetic UUIDv8 with 48-bit timestamp prefix + SHA-256 entropy preserves Postgres B-tree insert locality on hot indexed columns, while UUIDv5's random scatter is a write-amplification catastrophe on the same workloads; library selection between `uuid6` pure-Python and `uuid-utils` Rust-backed by throughput need), double-entry ledger architecture (Accounts + Transfers as canonical entities, debit=credit invariant enforced at the database level, append-only immutable history, balance computed from entries — never stored), two-phase transfers (single-phase for funds inbound to user, two-phase via `HOLD` balance for funds outbound — `Reserve → Commit | Release` with mutual exclusion), atomic chains for composite operations (transfer-with-fee, multi-leg settlements as one DB transaction), transaction state machines with optimistic concurrency control via append-only state log + `UNIQUE(aggregate_id, parent_id)` chain CAS (no `SELECT FOR UPDATE`, no `SERIALIZABLE`, no `version int` column), external payment provider integration via stateless proxy/facade pattern with sync request + async webhook callback architecture (signature verification, three-layer dedup via webhook event ids, `QueryStatus` fallback for timeout reconciliation), reversibility via separate transaction with `parent_transaction_id` link and direction inversion, and DB-enforced invariants (UNIQUE constraints for both idempotency keys and chain CAS, partial UNIQUE for webhook event dedup, CHECK constraints for non-negative balances, foreign key integrity). Use this skill whenever the user is writing, reviewing, debugging, or designing money-handling code in a Python backend — including any work involving `Decimal` arithmetic on monetary amounts, currency conversion, idempotency key handling, payment intent / charge / refund / chargeback flows, ledger or journal table design, account balance computation, payment provider (PSP) integration with webhooks, transaction state machines with terminal states, refund / void / recall / chargeback patterns, optimistic concurrency control with append-only logs, parent-child transaction relationships, payment hash-chain audit trails, compliance-grade financial audit, or deterministic UUID derivation decisions in proxy / bridge services (UUIDv5 vs UUIDv8, `uuid.uuid5(...)` vs `uuid6.uuid8(...)` / `uuid_utils.uuid8(...)`, synthetic IDs, namespace separator literals). Trigger on imports of `decimal.Decimal`, money libraries (`py-money`, `dinero`, `stockholm`, `moneyed`), `uuid.uuid5` / `uuid.uuid4` used as deterministic or idempotency-substitute identifiers, `uuid6` or `uuid_utils` imports, code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Entry` / `Account` / `Balance` ORM models, payment-related proto / gRPC services, PSP webhook handlers, refund or chargeback handlers, any stateless-proxy code that constructs a `request_id` from upstream-supplied fields, or any database migration touching financial tables. Do NOT use for inventory management without payment flow, generic CRUD apps without ledger semantics, frontend payment form UI rendering, cryptocurrency-only systems with UTXO models (different patterns), tax computation engines (jurisdiction-specific encyclopedia), or KYC / onboarding flows (separate concern).
 ---
 
 # Money & Payments Best Practices (Engineering, Python-First)
@@ -139,20 +139,70 @@ The single most-misunderstood pattern in payment systems. The two layers below s
 
     The PSP-supplied `inbox_event_id` (verbatim from the provider) deduplicates retries at the database level. Don't try to make webhook dedup share the chain-CAS mechanism — the unique key (`event_id`) is provider-supplied and orthogonal to the CAS chain.
 
+## Deterministic IDs — when derivation is allowed
+
+The two-layer idempotency model assumes the client supplies a key. Some upstream protocols don't — a stateless proxy must construct one. There is exactly one architecturally clean way, and one widely-reflexed wrong way.
+
+14. **"Generation forbidden, derivation allowed."** A stateless proxy MUST NOT mint fresh `uuid.uuid4()` values per call — retries become brand-new transactions, double-write follows. A stateless proxy MAY *derive* a deterministic ID as a pure function of canonical-observable inputs (target transaction id, target timestamp, op kind). Same inputs → same UUID, byte-for-byte, across replicas and restarts. Downstream `UNIQUE(scope_id, request_id)` then absorbs retries without proxy-side coordination.
+    - **Why:** the upstream may not allocate an idempotency key (legacy protocols where the request body carries only the *target's* id, not an operation id). Minting fresh values silently breaks idempotency on retry; copying the target's id collides with the target's own transaction. Pure-function derivation is the only stateless answer.
+
+15. **UUIDv5 on index-heavy columns is a Postgres B-tree catastrophe.** When AI assistants and humans alike reach for `uuid.uuid5(namespace, name)` reflexively because "deterministic", the result is 122 bits of SHA-1 scattered randomly across the index keyspace. On any column you INSERT and INDEX repeatedly — PK, FK, hot lookup, audit log — this kills cache locality, triggers constant B-tree page splits, inflates WAL, and causes write amplification of 3-5× vs time-ordered IDs. UUIDv5 is acceptable for **non-indexed** deterministic IDs (config hashes, in-memory cache keys, namespace markers); forbidden for PK / FK / hot indexed columns.
+    - **Why:** Postgres B-tree inserts touch the leaf page where the new key sorts. Random UUIDs (v4, v5) hit a different page nearly every insert — the working set blows past `shared_buffers`, every write is a cache miss, every page split fragments the index further. Time-ordered UUIDs (v7, v8 with timestamp prefix) write sequentially into a hot tail page. On a 50M-row table the difference is "10K writes/sec sustained" vs "the database falls over by mid-afternoon".
+
+16. **UUIDv8 synthetic — deterministic AND time-ordered in one construct.** The proxy-derivation use case (rule #14) needs both: replay-safe (deterministic) and index-friendly (time-ordered). RFC 9562 UUIDv8 leaves 122 bits user-defined; lay them out as a 48-bit unix-ms prefix + 12+62 bits of SHA-256 hash:
+
+    ```python
+    import hashlib
+    import uuid
+    from typing import Literal
+
+    OpKind = Literal["refund", "recall"]  # namespace separator — must be set-of-strings reserved up-front
+
+    _MASK_48 = (1 << 48) - 1
+    _MASK_12 = (1 << 12) - 1
+    _MASK_62 = (1 << 62) - 1
+    _VERSION_8_BITS = 0x8 << 76
+    _RFC_4122_VARIANT_BITS = 0b10 << 62
+
+    def synthetic_v8(orig_ts_ms: int, orig_id: uuid.UUID, op_kind: OpKind) -> uuid.UUID:
+        """Deterministic UUIDv8: 48-bit time prefix + 74 bits of SHA-256 entropy."""
+        digest = hashlib.sha256(orig_id.bytes + op_kind.encode()).digest()
+        a = orig_ts_ms                                & _MASK_48
+        b = int.from_bytes(digest[0:2], "big")        & _MASK_12
+        c = int.from_bytes(digest[2:10], "big")       & _MASK_62
+        return uuid.UUID(int=(a << 80) | _VERSION_8_BITS | (b << 64) | _RFC_4122_VARIANT_BITS | c)
+    ```
+
+    - The 48-bit time prefix gives the same B-tree insert locality as UUIDv7 — sequential writes land on one hot tail page.
+    - The 74 bits of SHA-256 entropy in the `b`/`c` regions make collisions astronomically unlikely (≫ birthday bound for any realistic transaction volume).
+    - **`op_kind` is a namespace separator.** Different operation classes (e.g. `"refund"`, `"recall"`) on the same `(orig_ts_ms, orig_id)` yield different UUIDs — without it, two concurrent operations of different kinds on the same target would collide. Reserve the full `OpKind` literal set up-front; adding values is a breaking change for IDs already in flight.
+    - **Python 3.13+** supports `uuid.UUID(int=..., version=8)` directly; on 3.12 the manual int composition above is required (`version=8` raises `ValueError`).
+    - **Property-test the primitive:** determinism (`synthetic_v8(t, u, k) == synthetic_v8(t, u, k)`), namespace separation (different `op_kind` → different UUID for same `(t, u)`), time-bits round-trip (`int.from_bytes(uuid.bytes[0:6], "big") == orig_ts_ms`), and a 1M-input collision smoke test. See the `pytest-best-practices` skill for `hypothesis` strategies.
+
+17. **UUID library selection — pick by throughput need:**
+
+    | Library | Backend | API | Speed vs stdlib | When to use |
+    |---|---|---|---|---|
+    | [`uuid6`](https://pypi.org/project/uuid6/) | pure Python (BSD, ~1 KLoC) | `uuid6.uuid7()`, `uuid6.uuid8(a, b, c)` (explicit 3-arg constructor) | baseline | Low-frequency derivation paths (a handful of proxy calls/sec); small dep footprint matters; audit-readable code where the explicit `uuid8(a, b, c)` makes the bit-layout intent obvious. |
+    | [`uuid-utils`](https://pypi.org/project/uuid-utils/) | Rust via PyO3 | `uuid_utils.uuid7()`, `uuid_utils.uuid8(...)`, `uuid_utils.uuid4()`, etc. | ~15-19× faster | Hot path (every transaction PK, every state-log row, every audit entry); services > 10K IDs/s; high-throughput ingestion or analytic pipelines. |
+    | stdlib `uuid` | pure Python | `uuid.UUID(int=..., version=8)` (Python 3.13+) | baseline | Zero-dep environments; manual int composition acceptable; project pinned to 3.13+. |
+
+    Most projects need **both**: `uuid-utils` for the hot PK path (`pk = uuid_utils.uuid7()`), `uuid6` (or manual stdlib composition) for the rare derivation path where the explicit `uuid8(a, b, c)` constructor reads better in audit and code review. Pick deliberately per path; don't mix at random.
+
 ## Double-entry ledger architecture
 
 The canonical model, formalised by TigerBeetle: **two entities — Accounts and Transfers — and one invariant — every debit has an equal and opposite credit**. This minimal vocabulary expresses any exchange of value.
 
-14. **Two entities, period.**
+18. **Two entities, period.**
     - **Accounts** carry balances (sum of entries, computed not stored). Account types are *normal-side* qualified: ASSET-normal (player wallet, cash, receivables) or LIABILITY-normal (PSP counterparty, payable, deferred revenue). The "normal side" determines whether a debit increases or decreases the account.
-    - **Transfers** (or "entries", "journal entries") are immutable records of value movement: `(from_account, to_account, amount, currency, timestamp)`. A transfer always touches exactly two accounts (the canonical double-entry model — multi-leg compositions are atomic chains of two-leg transfers, see #20).
+    - **Transfers** (or "entries", "journal entries") are immutable records of value movement: `(from_account, to_account, amount, currency, timestamp)`. A transfer always touches exactly two accounts (the canonical double-entry model — multi-leg compositions are atomic chains of two-leg transfers, see #28).
 
-15. **Append-only.** Transfers are NEVER updated, NEVER deleted. Corrections are *new compensating transfers*, not edits. This is the foundation of audit truthfulness.
+19. **Append-only.** Transfers are NEVER updated, NEVER deleted. Corrections are *new compensating transfers*, not edits. This is the foundation of audit truthfulness.
     - **Why:** regulators and auditors require an unbroken evidence chain. A row updated last week looks identical in the database to a row that was always that way — the difference matters for compliance, dispute resolution, and forensic investigation. UPDATE on a ledger entry is a bug.
 
-16. **Balance is computed from entries — never stored as the source of truth.** A `balance` column on the account is acceptable as a *denormalised cache* (updated atomically with the inserting transfer for fast reads), but the truth is `sum(credit_entries) - sum(debit_entries)` over the journal. Reconciliation routines must be able to recompute balance and verify the cache.
+20. **Balance is computed from entries — never stored as the source of truth.** A `balance` column on the account is acceptable as a *denormalised cache* (updated atomically with the inserting transfer for fast reads), but the truth is `sum(credit_entries) - sum(debit_entries)` over the journal. Reconciliation routines must be able to recompute balance and verify the cache.
 
-17. **DB-enforced invariants over application-enforced ones.** Where possible, encode the constraints in schema:
+21. **DB-enforced invariants over application-enforced ones.** Where possible, encode the constraints in schema:
 
     ```sql
     CREATE TABLE account (
@@ -178,7 +228,7 @@ The canonical model, formalised by TigerBeetle: **two entities — Accounts and 
 
     - **Why:** application-layer enforcement loses to race conditions, code paths bypassed by manual SQL, and the inevitable "we'll just patch this directly" production incident. The database is the only layer that all writers go through. TigerBeetle's tagline applies: *"enforce that accounts never go negative — at the database level, not in your application code."*
 
-18. **Account-type taxonomy used in payment systems** (typical subset):
+22. **Account-type taxonomy used in payment systems** (typical subset):
 
     | Type | Normal side | Examples |
     |---|---|---|
@@ -194,7 +244,7 @@ The canonical model, formalised by TigerBeetle: **two entities — Accounts and 
 
 Some money flows are atomic; others need two phases. The canonical examples are mirror images:
 
-19. **Funds inbound to user — single-phase.** Deposit completion, refund credit, passive return. One atomic transfer:
+23. **Funds inbound to user — single-phase.** Deposit completion, refund credit, passive return. One atomic transfer:
 
     ```python
     # Single ApplyTransfer call
@@ -208,7 +258,7 @@ Some money flows are atomic; others need two phases. The canonical examples are 
 
     No reservation needed — the funds arrive from outside, there's no risk of the user spending them before settlement.
 
-20. **Funds outbound from user — two-phase via `HOLD` balance.** Withdrawal, refund debit, chargeback compensating debit. Three-step protocol with mutual exclusion on the terminal step:
+24. **Funds outbound from user — two-phase via `HOLD` balance.** Withdrawal, refund debit, chargeback compensating debit. Three-step protocol with mutual exclusion on the terminal step:
 
     | Step | Transfer | Triggered by |
     |---|---|---|
@@ -218,16 +268,16 @@ Some money flows are atomic; others need two phases. The canonical examples are 
 
     - **Why two-phase:** between intent commit and PSP confirmation, the user might try to spend the same funds elsewhere (place a bet, initiate a second withdrawal). The HOLD makes the funds unavailable for new operations the moment the intent is committed — closing the fraud window without requiring distributed transactions across the wallet and PSP.
 
-21. **Reserve happens at intent commit, NOT at PSP-call time.**
+25. **Reserve happens at intent commit, NOT at PSP-call time.**
     - **Why:** if reserve waits until just before the PSP call, the user has the entire async risk-evaluation window to drain their balance into another flow (e.g., place a wager). HOLD active from the moment the withdrawal exists ensures the balance is unavailable throughout the lifecycle.
 
-22. **Commit and Release are mutually exclusive — exactly one terminal transfer per HOLD.** The state machine guarantees this, not application code. Crash-recovery reads which step was already executed from the durable state log; on replay, the same `transaction_id` is used so the wallet de-duplicates idempotently.
+26. **Commit and Release are mutually exclusive — exactly one terminal transfer per HOLD.** The state machine guarantees this, not application code. Crash-recovery reads which step was already executed from the durable state log; on replay, the same `transaction_id` is used so the wallet de-duplicates idempotently.
 
-23. **HOLD is a singleton balance per `(account, currency)`.** Don't create a new HOLD per transaction — that fragments accounting. Multiple in-flight outbound transactions share the same HOLD; the sum of in-flight reserves equals the HOLD balance. The wallet's idempotency on `transaction_id` distinguishes which transaction's HOLD-portion to release vs commit.
+27. **HOLD is a singleton balance per `(account, currency)`.** Don't create a new HOLD per transaction — that fragments accounting. Multiple in-flight outbound transactions share the same HOLD; the sum of in-flight reserves equals the HOLD balance. The wallet's idempotency on `transaction_id` distinguishes which transaction's HOLD-portion to release vs commit.
 
 ## Atomic chains for composite operations
 
-24. **Composite operations (transfer-with-fee, multi-leg settlements, fund splits) are an atomic chain of two-leg transfers committed in one DB transaction.** TigerBeetle calls these "linked events"; in a relational DB they're multiple `INSERT` statements inside a single transaction with `BEGIN ... COMMIT`.
+28. **Composite operations (transfer-with-fee, multi-leg settlements, fund splits) are an atomic chain of two-leg transfers committed in one DB transaction.** TigerBeetle calls these "linked events"; in a relational DB they're multiple `INSERT` statements inside a single transaction with `BEGIN ... COMMIT`.
 
     ```python
     # Withdrawal with fee — three transfers, atomically:
@@ -242,13 +292,13 @@ Some money flows are atomic; others need two phases. The canonical examples are 
 
     Either all three commit, or none do. The DB transaction is the unit of atomicity; no two-phase commit (2PC) across systems is needed.
 
-25. **Why not 2PC across services?** Because 2PC is brittle (coordinator failure leaves participants in unresolved state) and not necessary if you keep ledger writes in one DB. Cross-service consistency goes via *sagas + idempotency*, not 2PC: each service's local DB transaction is atomic; cross-service compensation handles failures.
+29. **Why not 2PC across services?** Because 2PC is brittle (coordinator failure leaves participants in unresolved state) and not necessary if you keep ledger writes in one DB. Cross-service consistency goes via *sagas + idempotency*, not 2PC: each service's local DB transaction is atomic; cross-service compensation handles failures.
 
 ## Transaction state machines + chain-CAS OCC
 
 The pattern formalised in #10. Worth its own section because it's the orchestrating mechanism for everything above.
 
-26. **State as VARCHAR + Python `StrEnum`, not PG enum.** Avoid `CREATE TYPE state AS ENUM(...)` — renaming or removing values requires expensive migrations on multi-billion-row tables, and the lock-in is real.
+30. **State as VARCHAR + Python `StrEnum`, not PG enum.** Avoid `CREATE TYPE state AS ENUM(...)` — renaming or removing values requires expensive migrations on multi-billion-row tables, and the lock-in is real.
 
     ```python
     import enum
@@ -269,9 +319,9 @@ The pattern formalised in #10. Worth its own section because it's the orchestrat
 
     Schema column: `current_state VARCHAR(32) NOT NULL`. App-layer enforces validity via the StrEnum.
 
-27. **Explicit transition allowlist.** Don't let arbitrary `from_state → to_state` happen. A direction-aware allowlist (separate for inbound vs outbound flows where applicable) catches programming errors at the boundary.
+31. **Explicit transition allowlist.** Don't let arbitrary `from_state → to_state` happen. A direction-aware allowlist (separate for inbound vs outbound flows where applicable) catches programming errors at the boundary.
 
-28. **Atomic tip-and-CAS via anti-JOIN INSERT.** The "read tip → validate → INSERT with parent_id" sequence has a race window. Compress to a single SQL statement:
+32. **Atomic tip-and-CAS via anti-JOIN INSERT.** The "read tip → validate → INSERT with parent_id" sequence has a race window. Compress to a single SQL statement:
 
     ```sql
     INSERT INTO transaction_state_log (id, aggregate_id, parent_id, from_state, to_state, payload, hash)
@@ -289,13 +339,13 @@ The pattern formalised in #10. Worth its own section because it's the orchestrat
 
     Zero rows inserted = conflict (without an `IntegrityError`); wrap in repository code that translates to `StateChangedConcurrentlyError`.
 
-29. **READ COMMITTED, no SELECT FOR UPDATE, no SERIALIZABLE.** The chain-CAS pattern works at the lowest standard isolation level. SERIALIZABLE adds retry overhead under contention; pessimistic locks serialise access unnecessarily. Optimistic via UNIQUE is faster and clearer.
+33. **READ COMMITTED, no SELECT FOR UPDATE, no SERIALIZABLE.** The chain-CAS pattern works at the lowest standard isolation level. SERIALIZABLE adds retry overhead under contention; pessimistic locks serialise access unnecessarily. Optimistic via UNIQUE is faster and clearer.
 
-30. **Hash-chain over the state log for audit-grade evidence.** Each entry stores `prev_hash` (hash of the previous entry in the chain) and `hash` (hash of this entry's content + prev_hash). Tampering with any historical entry breaks the chain at that point, detectable by re-walking. This is *primary audit*; structured logs are defense-in-depth (see the `observability-best-practices` skill on log correlation).
+34. **Hash-chain over the state log for audit-grade evidence.** Each entry stores `prev_hash` (hash of the previous entry in the chain) and `hash` (hash of this entry's content + prev_hash). Tampering with any historical entry breaks the chain at that point, detectable by re-walking. This is *primary audit*; structured logs are defense-in-depth (see the `observability-best-practices` skill on log correlation).
 
 ## External payment provider (PSP) integration
 
-31. **Stateless proxy / facade per PSP family.** One proxy service per PSP "flavor" (Stripe-style, M-Pesa-style), not per integration instance. The application service (payment system) holds credentials and config; the proxy holds *no state* — credentials flow per-call.
+35. **Stateless proxy / facade per PSP family.** One proxy service per PSP "flavor" (Stripe-style, M-Pesa-style), not per integration instance. The application service (payment system) holds credentials and config; the proxy holds *no state* — credentials flow per-call.
 
     ```
     PaymentService ─── ChargeRequest ───▶ Proxy ─── HTTP/SDK ───▶ PSP
@@ -314,26 +364,26 @@ The pattern formalised in #10. Worth its own section because it's the orchestrat
     - Owns transaction state machine, idempotency, ledger.
     - Treats every PSP through the same `Charge / Payout / Refund / QueryStatus` API surface.
 
-32. **Sync request + async webhook callback architecture.** The PSP returns "accepted, awaiting outcome" synchronously; the actual outcome arrives later via webhook. The application service must handle:
+36. **Sync request + async webhook callback architecture.** The PSP returns "accepted, awaiting outcome" synchronously; the actual outcome arrives later via webhook. The application service must handle:
     - **Synchronous response**: outcome unknown — transition to `AWAITING_CALLBACK` state, store the PSP-side identifier (`psp_tx_id`), set a timeout.
     - **Webhook arrival**: signature verification, idempotency check (same `inbox_event_id` from PSP = no-op), state transition based on outcome.
     - **Timeout fallback**: if the webhook never arrives, call `QueryStatus(psp_tx_id)` to ask the PSP authoritatively. Reconciliation backstop catches anything the active flow missed.
 
-33. **Webhook signature verification is non-negotiable.** Every webhook handler verifies the provider's HMAC signature (or equivalent — JWT, X.509) **before** any state mutation. Unverified webhooks are an attack vector for crediting attacker-controlled accounts.
+37. **Webhook signature verification is non-negotiable.** Every webhook handler verifies the provider's HMAC signature (or equivalent — JWT, X.509) **before** any state mutation. Unverified webhooks are an attack vector for crediting attacker-controlled accounts.
    - **Why:** webhook URLs are sometimes leaked (in logs, in code, by URL probing). Without signature verification, anyone who knows the URL can post crafted payloads.
 
-34. **Three-layer webhook deduplication:**
+38. **Three-layer webhook deduplication:**
     1. Signature verification (rejects forgeries).
     2. `(inbox_source, inbox_event_id)` partial UNIQUE on the state log (rejects PSP retries).
     3. Application-level signal-handler idempotency (rejects in-process retries).
 
     All three together cost almost nothing at runtime and catch failures the others miss.
 
-35. **`QueryStatus` as the authoritative timeout fallback.** When the webhook is late, don't guess — call the PSP. The PSP's view of "did this transaction succeed?" is the truth. The application reconciles its state against that answer.
+39. **`QueryStatus` as the authoritative timeout fallback.** When the webhook is late, don't guess — call the PSP. The PSP's view of "did this transaction succeed?" is the truth. The application reconciles its state against that answer.
 
 ## Reversibility — refunds, recalls, chargebacks
 
-36. **A reversal is a separate transaction with `parent_transaction_id` linking to the original.** Don't mutate the original transaction's state to "refunded" — the original happened, the refund is a new economic event, and they have independent lifecycles.
+40. **A reversal is a separate transaction with `parent_transaction_id` linking to the original.** Don't mutate the original transaction's state to "refunded" — the original happened, the refund is a new economic event, and they have independent lifecycles.
 
     ```python
     class Transaction:
@@ -343,7 +393,7 @@ The pattern formalised in #10. Worth its own section because it's the orchestrat
         # ... rest
     ```
 
-37. **Direction inversion.** A reversal's `direction` is the *opposite* of its parent's:
+41. **Direction inversion.** A reversal's `direction` is the *opposite* of its parent's:
 
     | Original direction | Reversal type | Reversal direction |
     |---|---|---|
@@ -352,34 +402,41 @@ The pattern formalised in #10. Worth its own section because it's the orchestrat
     | OUTBOUND withdrawal | Passive return (PSP couldn't deliver) | INBOUND |
     | INBOUND deposit | Chargeback (lost dispute) | OUTBOUND |
 
-    Money-flow direction (player credit vs player debit) follows from this — and so do the wallet primitives (single-phase vs two-phase from #19-23).
+    Money-flow direction (player credit vs player debit) follows from this — and so do the wallet primitives (single-phase vs two-phase from #23-27).
 
-38. **Atomic chain CAS on the parent's state log when creating a reversal.** Two operators concurrently initiating a refund on the same transaction must result in *one* refund, not two. One DB transaction:
+42. **Atomic chain CAS on the parent's state log when creating a reversal.** Two operators concurrently initiating a refund on the same transaction must result in *one* refund, not two. One DB transaction:
     - Inserts a chain-CAS entry on the parent's state log: `SETTLED → REVERSING` with `expected_from_state=SETTLED`.
     - Inserts the reversal transaction row with `parent_transaction_id`.
 
     Concurrent attempt → only one wins the chain CAS → other gets `409 Conflict`.
 
-39. **Same backbone state machine, separate identity.** The reversal goes through `CREATED → PROCESSING → SETTLED` (its own lifecycle). The original transitions through `SETTLED → REVERSING → REVERSED` (the reversal's success drives the original's terminal-after-reversal state). Two coupled but distinct flows.
+43. **Same backbone state machine, separate identity.** The reversal goes through `CREATED → PROCESSING → SETTLED` (its own lifecycle). The original transitions through `SETTLED → REVERSING → REVERSED` (the reversal's success drives the original's terminal-after-reversal state). Two coupled but distinct flows.
 
-40. **Partial reversals are reversals with `amount < parent.amount`.** Multiple partial reversals can chain off the same parent; track cumulative-reversed via a derived view, never mutate the parent's `amount`.
+44. **Partial reversals are reversals with `amount < parent.amount`.** Multiple partial reversals can chain off the same parent; track cumulative-reversed via a derived view, never mutate the parent's `amount`.
 
 ## DB-enforced invariants — a checklist
 
 The patterns above lean heavily on the database. Centralise the constraints:
 
-41. **Idempotency uniqueness:** `UNIQUE(scope_id, idempotency_key)` on the intent table.
-42. **Chain CAS uniqueness:** `UNIQUE(aggregate_id, parent_id)` on the state log.
-43. **Webhook event uniqueness:** partial `UNIQUE(inbox_source, inbox_event_id) WHERE inbox_event_id IS NOT NULL` on the state log (or a dedicated inbox table).
-44. **Account constraints:** `CHECK (balance >= 0 OR account_type IN ('LIABILITY', 'EQUITY'))` — application code that "would have caught it" in code review will not catch it under load.
-45. **Transfer constraints:** `CHECK (amount > 0)`, `CHECK (from_account_id <> to_account_id)`, FK integrity to account rows.
-46. **State VARCHAR length:** `VARCHAR(32)` is generous for state names, supports app-side `StrEnum`, avoids PG enum migration pain.
-47. **UUIDv7 for time-ordered primary keys.** B-tree friendly (better cache locality than UUIDv4), millisecond-precise creation order, no PRNG dependency for replay safety. Use `uuid6.uuid7()` (real OS randomness) — never derive UUIDs deterministically inside workflow code.
+45. **Idempotency uniqueness:** `UNIQUE(scope_id, idempotency_key)` on the intent table.
+46. **Chain CAS uniqueness:** `UNIQUE(aggregate_id, parent_id)` on the state log.
+47. **Webhook event uniqueness:** partial `UNIQUE(inbox_source, inbox_event_id) WHERE inbox_event_id IS NOT NULL` on the state log (or a dedicated inbox table).
+48. **Account constraints:** `CHECK (balance >= 0 OR account_type IN ('LIABILITY', 'EQUITY'))` — application code that "would have caught it" in code review will not catch it under load.
+49. **Transfer constraints:** `CHECK (amount > 0)`, `CHECK (from_account_id <> to_account_id)`, FK integrity to account rows.
+50. **State VARCHAR length:** `VARCHAR(32)` is generous for state names, supports app-side `StrEnum`, avoids PG enum migration pain.
+51. **UUID strategy by purpose** (consolidates rules #14-#17):
+
+    | Use case | Strategy | Why |
+    |---|---|---|
+    | Workflow-internal PKs (`transaction.id`, `state_log.id`) — fresh writes per attempt | **UUIDv7** via `uuid_utils.uuid7()` or `uuid6.uuid7()` | Time-ordered random tail → B-tree insert locality; replay safety lives in the idempotency key (rule #8), not the PK |
+    | Deterministic ID + index pressure (proxy bridge IDs, derived ledger entry IDs, audit recompute targets) | **UUIDv8 synthetic** per rule #16 | The only construct that gives BOTH determinism AND time-ordered B-tree locality |
+    | Deterministic ID, no index pressure (config hashes, in-memory cache keys, namespace markers) | **UUIDv5** (stdlib `uuid.uuid5(namespace, name)`) | Standard, three lines, zero deps; scatter doesn't matter where the column isn't indexed |
+    | **Forbidden** | `uuid.uuid4()` minted server-side as idempotency substitute (rule #14); UUIDv5 on PK / FK / hot indexed columns (rule #15) | Silent double-charges; Postgres B-tree write-amplification catastrophe |
 
 ## Things explicitly out of scope (with rationale)
 
 - **Specific compliance regimes** (PCI DSS, SOC 2, GLI-19, PSD2, AML, KYC tiers) — encyclopedia-level, jurisdiction-dependent, regulatory, not engineering pattern.
-- **PSP-specific quirks** (Stripe SCA, M-Pesa STK push polling, 3DS challenge flows) — defer to the PSP's documentation. The proxy/facade pattern (#31) isolates these from the application.
+- **PSP-specific quirks** (Stripe SCA, M-Pesa STK push polling, 3DS challenge flows) — defer to the PSP's documentation. The proxy/facade pattern (#35) isolates these from the application.
 - **FX / multi-currency conversion** — significant scope. Deserves its own skill if needed.
 - **Reconciliation** — daily match against external systems, mismatch taxonomy, evidence retention. Production patterns are typically project-specific (cadence, tooling, ticketing integration). Out of v1.
 - **Tax computation** — jurisdiction-specific encyclopedia.
@@ -387,12 +444,12 @@ The patterns above lean heavily on the database. Centralise the constraints:
 
 ## When applying these rules
 
-- **Be opinionated about footguns** (#1 no floats, #9 client-generated idempotency keys, #11 don't conflate idempotency with chain CAS, #12 chain-CAS conflict is fail-loud not retry, #15 ledger entries are immutable, #17 DB-enforced invariants over app-enforced, #20 two-phase for outbound, #21 reserve at intent commit not PSP-call, #33 webhook signature verification, #38 atomic chain CAS on reversal creation) — these are the patterns where shortcuts cause silent data corruption, double-charges, lost funds, audit-trail tampering, or compliance failures. Not preferences.
+- **Be opinionated about footguns** (#1 no floats, #9 client-generated idempotency keys, #11 don't conflate idempotency with chain CAS, #12 chain-CAS conflict is fail-loud not retry, #14 generation forbidden / derivation allowed, #15 UUIDv5 on index-heavy columns is a Postgres catastrophe, #19 ledger entries are immutable, #21 DB-enforced invariants over app-enforced, #24 two-phase for outbound, #25 reserve at intent commit not PSP-call, #37 webhook signature verification, #42 atomic chain CAS on reversal creation) — these are the patterns where shortcuts cause silent data corruption, double-charges, lost funds, audit-trail tampering, or compliance failures. Not preferences.
 - **Be flexible about taxonomy** (specific account types, state names, status enums, `transaction_type` values) — match the project's existing domain vocabulary. The *shapes* in this skill are the grammar; the *names* are the project's vocabulary.
 - **Read the existing schema first.** If the project has an established ledger / journal / state-log table layout, conform to it rather than introducing this skill's column names. New services adopt; don't reinvent.
 - **Cross-skill awareness:**
-  - `sqlalchemy-best-practices` — ledger / journal table design, async session lifecycle, `expire_on_commit=False` for post-commit attribute access on transaction objects.
+  - `sqlalchemy-best-practices` — ledger / journal table design, `Mapped[uuid.UUID]` PK column choice (time-ordered v7/v8 vs random v4 has the same B-tree consequences as rules #15-#16 above), async session lifecycle, `expire_on_commit=False` for post-commit attribute access on transaction objects.
   - `grpc-python-best-practices` — sync RPC for application↔proxy, async webhook delivery via gRPC, the `<service>:<RpcError>` translation hierarchy for cross-service error handling.
   - `observability-best-practices` — log correlation via `trace_id`, business IDs as `<service>.<key>` span attributes for Tempo search across the lifecycle, hash-chain audit log as *primary* (not redundant with structured logs which are defense-in-depth).
-  - `pytest-best-practices` — property-based testing with `hypothesis` for money invariants (`add(a,b) == add(b,a)`, `total = sum(parts)`, currency conversion round-trip identities), real-DB integration tests for ledger semantics (mocked SQLAlchemy hides invalid SQL).
+  - `pytest-best-practices` — property-based testing with `hypothesis` for money invariants (`add(a,b) == add(b,a)`, `total = sum(parts)`, currency conversion round-trip identities) and for the `synthetic_v8` primitive (determinism, `op_kind` namespace separation, time-bits round-trip, 1M-input collision smoke per rule #16), real-DB integration tests for ledger semantics (mocked SQLAlchemy hides invalid SQL).
 - **The hardest part is restraint.** Money systems accumulate "small" features that turn into compliance liabilities (mid-flow currency changes, stored card details, balance corrections without audit). The patterns above lean on the database and the schema deliberately — not because schemas are fashionable, but because every other layer eventually has a bypass path. If a money rule isn't in the schema or in an immutable log, it's not actually a rule.

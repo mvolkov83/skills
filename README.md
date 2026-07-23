@@ -54,6 +54,15 @@ A [Claude Code skill](https://code.claude.com/docs/en/skills) is a markdown file
 
 Each plugin in this marketplace ships exactly one skill. The skill body is plain markdown — no code execution, no surprises. Read any `SKILL.md` to see exactly what guidance Claude gets when the skill triggers.
 
+One plugin also ships **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
+
+| Command | Scope | Answers |
+|---|---|---|
+| `/gli-19-review-diff` | a PR, a ref range, or the working branch diff | which requirements *this change* violates or undermines |
+| `/gli-19-review-surface` | a service or module path | which requirements the service *does not implement* |
+
+The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate or a regulator report doesn't exist, because that isn't in the changed lines. The surface command exists for exactly those findings, and it opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong.
+
 ---
 
 ## How they trigger
@@ -160,6 +169,8 @@ Cross-references `sqlalchemy-best-practices` (ledger / journal table design), `g
 
 Scope-honest by construction: it covers the ~96 GLI-19 requirements whose evidence is code, infra or config, and explicitly declines the operator's procedural and governance obligations, the submission package, and roughly a fifth of the technical-security appendix that lives in IaC and runbooks (DNS hardening, firewall boundaries, remote access, patching, asset registers). It is engineering guidance with no certification weight — never a substitute for the standard or the laboratory's judgment.
 
+Ships two commands, `/gli-19-review-diff` and `/gli-19-review-surface` — see [How they trigger](#how-they-trigger). Both refuse to emit a certification verdict or a readiness percentage: the denominator depends on scoping rulings and jurisdiction, and a number from a code reader would be read as a compliance metric it isn't. `gli-19-review-surface` additionally takes verdicts from primary artifacts only — code, schema, migrations, config, tests — and never from a README, design doc or prior audit claiming a mechanism exists. Finding the claim without the mechanism is most of its value.
+
 Cross-references `money-and-payments-best-practices` (money representation, idempotency, double-entry structure — the gaming rules are an overlay on it), `observability-best-practices` (log centralization and tamper protection), `sqlalchemy-best-practices` (append-only schema design).
 
 ---
@@ -210,10 +221,10 @@ Or remove the marketplace entirely (uninstalls all plugins from it):
 
 ## Contributing
 
-Each skill is a single `SKILL.md` file with YAML frontmatter + markdown body. To improve one:
+Each skill is a single `SKILL.md` file with YAML frontmatter + markdown body; commands, where a plugin ships them, are one markdown file each under `plugins/<plugin-name>/commands/`. To improve one:
 
 1. Fork the repo.
-2. Edit `plugins/<plugin-name>/skills/<plugin-name>/SKILL.md`.
+2. Edit `plugins/<plugin-name>/skills/<plugin-name>/SKILL.md` (or the relevant `commands/*.md`).
 3. Submit a PR.
 
 PRs especially welcome:

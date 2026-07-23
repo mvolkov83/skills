@@ -10,6 +10,10 @@ certification. Every rule maps to one or more GLI-19 v3.0 requirement ids; the f
 requirement text, with testable criteria, is in `references/requirements.md` — read the entry when a
 rule's scope is unclear or when you need the criteria a laboratory will test against.
 
+Two commands ship alongside these rules. `/gli-19-review-diff` reviews a change for requirements it
+violates or undermines. `/gli-19-review-surface` assesses a service for requirements it does not
+implement — the absence findings a diff review structurally cannot produce.
+
 **These rules are engineering guidance, not the standard.** They cover the ~96 GLI-19 requirements
 whose evidence is code, infrastructure or configuration. They do not cover the operator's procedural
 and governance obligations (internal control procedures, service-provider agreements, staffing,

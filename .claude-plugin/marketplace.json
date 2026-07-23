@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mvolkov-skills",
-  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, OpenTelemetry observability, and money / payments / ledger engineering",
+  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, OpenTelemetry observability, money / payments / ledger engineering, and GLI-19 interactive-gaming-platform certification readiness",
   "owner": {
     "name": "Mykhailo Volkov",
     "email": "mvolkov83@gmail.com"
@@ -76,6 +76,16 @@
       },
       "category": "development",
       "source": "./plugins/money-and-payments-best-practices"
+    },
+    {
+      "name": "gli-19-platform-engineering",
+      "description": "Engineering rules for an interactive (online) gaming platform that has to pass a GLI-19 technical certification — server-authoritative game outcomes with no game logic on the client, one authoritative system clock, the records a gaming system must maintain (per-game play record, per-theme aggregates with theoretical RTP, player-account record, significant-event log, operator-access record), append-only financial history with integrity hashing and actor attribution, supervised alteration of accounting data, restricted incentive credits wagered before unrestricted funds, game-cycle exclusivity and interrupted-game hold/completion, game recall, player-account lifecycle and MFA boundaries, most-restrictive limit precedence, payout-destination binding, geolocation checks, on-demand disable controls, regulator reporting surfaces, control-program verification, and communications / crypto / key-management obligations. 81 rules mapped to GLI-19 v3.0 requirement ids",
+      "author": {
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
+      },
+      "category": "development",
+      "source": "./plugins/gli-19-platform-engineering"
     }
   ]
 }

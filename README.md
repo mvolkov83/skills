@@ -1,6 +1,6 @@
 # mvolkov-skills
 
-> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering**.
+> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering** — plus one domain skill for **GLI-19 interactive-gaming-platform certification readiness**.
 
 If you're using Claude Code on Python projects with this stack, these skills make Claude consistent with conventions the team has already converged on, without bloating your context. Each skill lazy-loads only when relevant — no cost on conversations where it doesn't apply.
 
@@ -8,7 +8,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 
 ## What's inside
 
-7 standalone skills. Install only what you need:
+8 standalone skills. Install only what you need:
 
 | Plugin | Triggers on | Adds guidance for |
 |---|---|---|
@@ -19,6 +19,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 | **[`git-workflow-best-practices`](plugins/git-workflow-best-practices/skills/git-workflow-best-practices/SKILL.md)** | `git commit`, `git push`, `gh pr create`, branch creation, PR review prep, commit message writing | Git Flow branches, Conventional Commits, atomic commits with imperative mood, pre-commit hygiene, `pull --rebase`, force-push scope, ~400 LOC PR target, squash on merge |
 | **[`observability-best-practices`](plugins/observability-best-practices/skills/observability-best-practices/SKILL.md)** | imports of `opentelemetry.*`, `setup_telemetry()` calls, `tracer.start_as_current_span()`, `LoggingInstrumentor`, span attribute setting, structlog with `trace_id` binding, OTLP exporter config, Loki / Tempo / Grafana / Sentry integration | Python OpenTelemetry — SDK bootstrap with off-switch + idempotency guard, auto-instrumentation (gRPC / SQLAlchemy / FastAPI / Logging), `LoggingInstrumentor` + structlog correlation, two-tier log field taxonomy, `<service>.<key>` span attributes, sensitive-field redaction, metrics cardinality control, tail-based sampling, Sentry-with-OTel |
 | **[`money-and-payments-best-practices`](plugins/money-and-payments-best-practices/skills/money-and-payments-best-practices/SKILL.md)** | imports of `decimal.Decimal`, money libraries (`py-money` / `dinero` / `stockholm` / `moneyed`), code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Account` / `Balance` ORM models, payment / charge / refund / chargeback handlers, idempotency_key handling, PSP webhook code, `parent_transaction_id` references | Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (`idempotency_key` + chain CAS, never conflated), double-entry ledger (Accounts + Transfers, append-only, balance computed not stored), two-phase transfers via HOLD, atomic chains, OCC state machines, stateless proxy for PSP integration with three-layer webhook dedup, reversibility via separate transaction with `parent_transaction_id`, DB-enforced invariants |
+| **[`gli-19-platform-engineering`](plugins/gli-19-platform-engineering/skills/gli-19-platform-engineering/SKILL.md)** | online casino / interactive gaming work — player accounts and wallets, game sessions and rounds, RGS or aggregation layers, bonus and jackpot engines, back-office adjustment and void endpoints, tables named like `rounds` / `transactions` / `player_accounts` / `bonuses`, phrases like "RTP", "self-exclusion", "game recall", "significant event log", "GLI" | GLI-19 v3.0 certification readiness — server-authoritative outcomes, authoritative system clock, the records a gaming system must maintain (play record, per-theme aggregates, player-account record, significant-event log), append-only financial history with integrity hashing and actor attribution, supervised alteration of accounting data, restricted-credits-first wagering order, game-cycle exclusivity and interrupted-game completion, account lifecycle and MFA boundaries, most-restrictive limit precedence, geolocation, disable controls, regulator reporting surfaces |
 
 Each skill is **depersonalized** — generic placeholder names (`MyService`, `MyServiceClient`, `MyServiceError`) instead of project-specific symbols. Patterns are anchored in real production code but written to apply across any project that follows the same stack.
 
@@ -37,6 +38,7 @@ In any Claude Code session:
 /plugin install git-workflow-best-practices@mvolkov-skills
 /plugin install observability-best-practices@mvolkov-skills
 /plugin install money-and-payments-best-practices@mvolkov-skills
+/plugin install gli-19-platform-engineering@mvolkov-skills
 /reload-plugins
 ```
 
@@ -51,6 +53,15 @@ That's it. Run a SQLAlchemy / FastAPI / pytest / gRPC / OTel / payments question
 A [Claude Code skill](https://code.claude.com/docs/en/skills) is a markdown file (`SKILL.md`) with structured guidance that Claude **lazy-loads** when its description matches what you're working on. Unlike `CLAUDE.md` instructions (which load every conversation), skills only consume context when the topic is actually relevant.
 
 Each plugin in this marketplace ships exactly one skill. The skill body is plain markdown — no code execution, no surprises. Read any `SKILL.md` to see exactly what guidance Claude gets when the skill triggers.
+
+One plugin also ships **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
+
+| Command | Scope | Answers |
+|---|---|---|
+| `/gli-19-review-diff` | a PR, a ref range, or the working branch diff | which requirements *this change* violates or undermines |
+| `/gli-19-review-surface` | a service or module path | which requirements the service *does not implement* |
+
+The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate or a regulator report doesn't exist, because that isn't in the changed lines. The surface command exists for exactly those findings, and it opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong.
 
 ---
 
@@ -70,6 +81,9 @@ Skills fire on substantive design / review / debugging work where conventions ma
 | "Should I use `Decimal` or store amounts as integer cents?" | `money-and-payments-best-practices` |
 | "Two requests with the same `idempotency_key` arrived — what's the right behaviour?" | `money-and-payments-best-practices` |
 | "How do I model refunds — mutate the original transaction or create a new one?" | `money-and-payments-best-practices` |
+| "Adding an admin endpoint to adjust a player's balance" | `gli-19-platform-engineering` + `money-and-payments-best-practices` |
+| "Should bonus credits or real money be consumed first when both are on the balance?" | `gli-19-platform-engineering` |
+| "What has to be in the game round record so we can reconstruct a disputed round?" | `gli-19-platform-engineering` |
 | "Read this file and summarize" | (none — too simple, Claude handles directly) |
 | "Generate a Django REST view" | (none — wrong stack, all skills explicitly skip non-FastAPI / non-SQLAlchemy frameworks) |
 
@@ -141,6 +155,24 @@ Cross-references `grpc-python-best-practices` (decorator chain), `fastapi-best-p
 
 Cross-references `sqlalchemy-best-practices` (ledger / journal table design), `grpc-python-best-practices` (sync RPC + async webhook architecture), `observability-best-practices` (hash-chain as primary audit, structured logs as defense-in-depth), `pytest-best-practices` (property-based testing for money invariants, real-DB ledger tests).
 
+### `gli-19-platform-engineering`
+
+81 rules across 12 sections — the write-time engineering layer of a GLI-19 v3.0 certification. Each rule maps to one or more requirement ids; `references/requirements.md` carries the paraphrased requirement with the testable criteria a laboratory assesses. Highlights:
+
+- **No game logic on the client; the server generates every outcome** — the load-bearing requirement. A client that can compute an outcome can forge one, and it dictates protocol shape: outcome fields must never travel client→server.
+- **Restricted incentive credits are wagered before unrestricted funds** — the natural implementation instinct is real-money-first, which is the exact inverse. Make consumption order an explicit tested policy, not an emergent property of list concatenation.
+- **Every mutation of accounting data carries an actor** — alteration id, element, value before, value after, timestamp, and *who*. The "who" is the field routinely missing, and a void attributable only to a player-facing session token is both a finding and a live security hole.
+- **Integrity hashing on financial rows, chained and verified at reconciliation** — trivial at schema-design time, permanently awkward once the table is populated (the backfill's trustworthiness is exactly what's in question).
+- **Per-theme aggregates are a maintained record, not a future query** — the rounds table holds the substrate, teams assume they'll compute it later, and its absence also blocks the theoretical-vs-actual RTP report.
+- **Interrupted-game completion ≠ crash recovery** — idempotent resume of an in-flight write is infrastructure; returning the player to the pre-interruption state and letting them finish is a product feature. The first is routinely reported as if it were the second.
+- **Most-restrictive limit wins** — precedence implemented as "last writer wins" or "most specific scope wins" can silently loosen a self-exclusion. Encode it as an explicit `min()` over active constraints.
+
+Scope-honest by construction: it covers the ~96 GLI-19 requirements whose evidence is code, infra or config, and explicitly declines the operator's procedural and governance obligations, the submission package, and roughly a fifth of the technical-security appendix that lives in IaC and runbooks (DNS hardening, firewall boundaries, remote access, patching, asset registers). It is engineering guidance with no certification weight — never a substitute for the standard or the laboratory's judgment.
+
+Ships two commands, `/gli-19-review-diff` and `/gli-19-review-surface` — see [How they trigger](#how-they-trigger). Both refuse to emit a certification verdict or a readiness percentage: the denominator depends on scoping rulings and jurisdiction, and a number from a code reader would be read as a compliance metric it isn't. `gli-19-review-surface` additionally takes verdicts from primary artifacts only — code, schema, migrations, config, tests — and never from a README, design doc or prior audit claiming a mechanism exists. Finding the claim without the mechanism is most of its value.
+
+Cross-references `money-and-payments-best-practices` (money representation, idempotency, double-entry structure — the gaming rules are an overlay on it), `observability-best-practices` (log centralization and tamper protection), `sqlalchemy-best-practices` (append-only schema design).
+
 ---
 
 ## Stack assumptions
@@ -155,6 +187,8 @@ The patterns are tuned for an async-first modern Python backend:
 - **Kubernetes** deployment (gRPC LB section assumes k8s + headless Services; non-k8s use cases still get value from the rest)
 - **OpenTelemetry**: `opentelemetry-api/sdk` + OTLP HTTP exporters + `opentelemetry-instrumentation-{grpc,sqlalchemy,fastapi,logging}`; structlog for structured logging; Loki + Tempo + Mimir or Grafana Cloud as the typical backend
 - **Money handling** (when applicable): `Decimal` from stdlib **or** integer minor units (Stripe pattern); a money library (`py-money`, `dinero`, `stockholm`, `moneyed`) for non-trivial arithmetic; PostgreSQL `UNIQUE` and partial `UNIQUE` constraints as the database-level guards for idempotency and chain-CAS
+
+`gli-19-platform-engineering` is the exception — it is a **domain** skill, not a stack skill. Its rules are about what an interactive gaming platform must do, not which libraries it does it with, so they apply regardless of language or framework.
 
 Sync `grpcio`, Pydantic v1 (`Config` inner class, `@validator`), SQLAlchemy 1.x (`Column()`, `session.query()`) are explicitly **legacy**. When skills see those patterns in code, they suggest the modern equivalent and explain why.
 
@@ -187,10 +221,10 @@ Or remove the marketplace entirely (uninstalls all plugins from it):
 
 ## Contributing
 
-Each skill is a single `SKILL.md` file with YAML frontmatter + markdown body. To improve one:
+Each skill is a single `SKILL.md` file with YAML frontmatter + markdown body; commands, where a plugin ships them, are one markdown file each under `plugins/<plugin-name>/commands/`. To improve one:
 
 1. Fork the repo.
-2. Edit `plugins/<plugin-name>/skills/<plugin-name>/SKILL.md`.
+2. Edit `plugins/<plugin-name>/skills/<plugin-name>/SKILL.md` (or the relevant `commands/*.md`).
 3. Submit a PR.
 
 PRs especially welcome:
@@ -211,5 +245,7 @@ The skills were created using Anthropic's official [`skill-creator`](https://git
 - **Inline code examples** for the trickiest patterns.
 - **Cross-references** to sibling skills where relevant.
 - **A closing "When applying these rules" section** distinguishing footguns (be opinionated) from preferences (be flexible).
+
+`gli-19-platform-engineering` is built differently. Its `references/requirements.md` is **generated** from a machine-readable requirement catalog extracted from the standard, filtered to the requirements whose evidence is code / infra / config and stripped of any project-specific service topology. The rules in `SKILL.md` are authored on top of that filtered set, and a coverage check verifies every rule cites a real requirement id and reports which in-scope requirements no rule covers — so the skill can't silently drift from the catalog it derives from.
 
 The repo's structure mirrors Anthropic's official `claude-plugins-official` marketplace conventions — top-level `.claude-plugin/marketplace.json`, per-plugin `<plugin-name>/.claude-plugin/plugin.json`, and skills under `<plugin-name>/skills/<skill-name>/SKILL.md`.

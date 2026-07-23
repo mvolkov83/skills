@@ -1,0 +1,8 @@
+{
+  "name": "gli-19-platform-engineering",
+  "description": "Engineering rules for building an interactive (online) gaming platform that can pass a GLI-19 technical certification — server-authoritative game outcomes with no game logic on the client, one authoritative system clock, the records a gaming system must maintain (per-game play record, per-theme aggregates with theoretical RTP, player-account record, significant-event log, operator-access record), append-only financial history with integrity hashing and actor attribution, supervised alteration of accounting data, restricted incentive credits wagered before unrestricted funds, wager debit / award settlement / game-cycle exclusivity, interrupted-game hold and completion, game recall depth, player-account lifecycle (age gate, identity verification before first play, one active account, MFA on credential and payout-account changes, enumeration-resistant login, lockout, inactivity re-auth), most-restrictive limit precedence, payout-destination binding, geolocation checks and spoofing detection, on-demand disable of gaming/themes/logins, regulator reporting surfaces, control-program self-verification and approved-version signature checks, and communications / crypto / key-management obligations. 81 rules, each mapped to GLI-19 v3.0 requirement ids, with the paraphrased requirement reference bundled",
+  "author": {
+    "name": "Mykhailo Volkov",
+    "email": "mvolkov83@gmail.com"
+  }
+}

@@ -62,8 +62,22 @@ One plugin also ships **slash commands**. Skills trigger themselves and answer "
 |---|---|---|
 | `/gli-19-review-diff` | a PR, a ref range, or the working branch diff | which requirements *this change* violates or undermines |
 | `/gli-19-review-surface` | a service or module path | which requirements the service *does not implement* |
+| `/gsf-security-review-diff` | a PR, a ref range, or the working branch diff (incl. infra) | which security controls *this change* violates or weakens |
+| `/gsf-security-review-surface` | a service or infrastructure path | which security controls the service/infra *does not implement* |
 
-The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate or a regulator report doesn't exist, because that isn't in the changed lines. The surface command exists for exactly those findings, and it opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong.
+The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate, a regulator report, an immutable backup or a network segment doesn't exist, because that isn't in the changed lines. The surface commands exist for exactly those findings, and each opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong. (The security surface command additionally credits controls *inherited* from the cloud/managed platform, but only against the config that proves the control is on.)
+
+### Wiring the security skill into an existing security-review gate
+
+Installed skills auto-trigger from their description in normal conversation, so a security review you ask for **in words** ("do a security review of this branch", "threat-model the wallet service") pulls in `gli-gsf-security` on a gaming-platform repo. A built-in **slash command** like `/security-review` is different — it runs its own methodology and does not consult installed marketplace skills. To make an existing gate also load this skill, add one line to the gaming repo's `CLAUDE.md` (which loads on every conversation):
+
+```markdown
+When performing any security review of this repository (including via `/security-review`),
+first load the `gli-gsf-security` skill and apply its rules; it is the security authority
+for this interactive-gaming platform.
+```
+
+Or just run the dedicated `/gsf-security-review-diff` / `/gsf-security-review-surface` gate, which loads the skill by construction.
 
 ---
 
@@ -190,6 +204,8 @@ Ships two commands, `/gli-19-review-diff` and `/gli-19-review-surface` — see [
 - **Key agility** — distinct keys per purpose so rotation is routine; one key everywhere makes rotation an all-or-nothing event that never happens.
 
 Same scope honesty as its sibling: it covers the GLI-GSF-1 controls whose evidence is code, infra or config (155 of 163 cited, reported by the coverage check), carries no certification weight, and does not cover the operator's GISMS governance programme. Cross-references `gli-19-platform-engineering` (application/gaming semantics and the financial-integrity model), `money-and-payments-best-practices` (payment and ledger specifics), `observability-best-practices` (instrumentation, log correlation, redaction), and `sqlalchemy-best-practices` (ORM-level data access).
+
+Ships two commands, `/gsf-security-review-diff` and `/gsf-security-review-surface` — see [How they trigger](#how-they-trigger). The diff command gates by security domain and reads infrastructure diffs (Terraform / Helm / security groups / IAM), not just application code; the surface command establishes what is owned vs *inherited* from the cloud/managed platform before it judges, credits an inherited control only against the config that proves it is enabled, and takes verdicts from primary artifacts — never from a policy document asserting a control exists. Neither emits a certification verdict, an assurance-tier attainment, or a security score.
 
 Cross-references `money-and-payments-best-practices` (money representation, idempotency, double-entry structure — the gaming rules are an overlay on it), `observability-best-practices` (log centralization and tamper protection), `sqlalchemy-best-practices` (append-only schema design).
 

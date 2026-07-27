@@ -1,6 +1,6 @@
 # mvolkov-skills
 
-> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering** — plus one domain skill for **GLI-19 interactive-gaming-platform certification readiness**.
+> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering** — plus two domain skills for interactive-gaming-platform work: **GLI-19 platform certification readiness** and **GLI Gaming Security Framework (GLI-GSF) security engineering**.
 
 If you're using Claude Code on Python projects with this stack, these skills make Claude consistent with conventions the team has already converged on, without bloating your context. Each skill lazy-loads only when relevant — no cost on conversations where it doesn't apply.
 
@@ -8,7 +8,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 
 ## What's inside
 
-8 standalone skills. Install only what you need:
+9 standalone skills. Install only what you need:
 
 | Plugin | Triggers on | Adds guidance for |
 |---|---|---|
@@ -20,6 +20,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 | **[`observability-best-practices`](plugins/observability-best-practices/skills/observability-best-practices/SKILL.md)** | imports of `opentelemetry.*`, `setup_telemetry()` calls, `tracer.start_as_current_span()`, `LoggingInstrumentor`, span attribute setting, structlog with `trace_id` binding, OTLP exporter config, Loki / Tempo / Grafana / Sentry integration | Python OpenTelemetry — SDK bootstrap with off-switch + idempotency guard, auto-instrumentation (gRPC / SQLAlchemy / FastAPI / Logging), `LoggingInstrumentor` + structlog correlation, two-tier log field taxonomy, `<service>.<key>` span attributes, sensitive-field redaction, metrics cardinality control, tail-based sampling, Sentry-with-OTel |
 | **[`money-and-payments-best-practices`](plugins/money-and-payments-best-practices/skills/money-and-payments-best-practices/SKILL.md)** | imports of `decimal.Decimal`, money libraries (`py-money` / `dinero` / `stockholm` / `moneyed`), code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Account` / `Balance` ORM models, payment / charge / refund / chargeback handlers, idempotency_key handling, PSP webhook code, `parent_transaction_id` references | Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (`idempotency_key` + chain CAS, never conflated), double-entry ledger (Accounts + Transfers, append-only, balance computed not stored), two-phase transfers via HOLD, atomic chains, OCC state machines, stateless proxy for PSP integration with three-layer webhook dedup, reversibility via separate transaction with `parent_transaction_id`, DB-enforced invariants |
 | **[`gli-19-platform-engineering`](plugins/gli-19-platform-engineering/skills/gli-19-platform-engineering/SKILL.md)** | online casino / interactive gaming work — player accounts and wallets, game sessions and rounds, RGS or aggregation layers, bonus and jackpot engines, back-office adjustment and void endpoints, tables named like `rounds` / `transactions` / `player_accounts` / `bonuses`, phrases like "RTP", "self-exclusion", "game recall", "significant event log", "GLI" | GLI-19 v3.0 certification readiness — server-authoritative outcomes, authoritative system clock, the records a gaming system must maintain (play record, per-theme aggregates, player-account record, significant-event log), append-only financial history with integrity hashing and actor attribution, supervised alteration of accounting data, restricted-credits-first wagering order, game-cycle exclusivity and interrupted-game completion, account lifecycle and MFA boundaries, most-restrictive limit precedence, geolocation, disable controls, regulator reporting surfaces |
+| **[`gli-gsf-security`](plugins/gli-gsf-security/skills/gli-gsf-security/SKILL.md)** | securing / hardening / auditing a gaming platform or its infra — access control and RBAC, authn and session management, secrets and key rotation, encryption at rest and in transit, network segmentation and firewall rules, DNSSEC, remote access, SIEM, immutable backups, disaster recovery, secure SDLC, provider integration; phrases like "gaming security", "GLI-GSF", "least privilege", "default-deny", "tamper-evident log", one firewall rule or one service account | GLI Gaming Security Framework (GLI-GSF-1) — the deep security layer beneath GLI-19's Appendix B, owning the infra/network security it deferred: logical access with separation of duties, ephemeral session authorization, key agility, data-at-rest encryption, production-DB network isolation, hardening, default-deny firewalls with no bypass path, tamper-evident logging, immutable off-site backups, release segregation of duties, and provider integration that cannot route into production. Rules carry GIG1/GIG2/GIG3 assurance tiers |
 
 Each skill is **depersonalized** — generic placeholder names (`MyService`, `MyServiceClient`, `MyServiceError`) instead of project-specific symbols. Patterns are anchored in real production code but written to apply across any project that follows the same stack.
 
@@ -39,6 +40,7 @@ In any Claude Code session:
 /plugin install observability-best-practices@mvolkov-skills
 /plugin install money-and-payments-best-practices@mvolkov-skills
 /plugin install gli-19-platform-engineering@mvolkov-skills
+/plugin install gli-gsf-security@mvolkov-skills
 /reload-plugins
 ```
 
@@ -84,6 +86,10 @@ Skills fire on substantive design / review / debugging work where conventions ma
 | "Adding an admin endpoint to adjust a player's balance" | `gli-19-platform-engineering` + `money-and-payments-best-practices` |
 | "Should bonus credits or real money be consumed first when both are on the balance?" | `gli-19-platform-engineering` |
 | "What has to be in the game round record so we can reconstruct a disputed round?" | `gli-19-platform-engineering` |
+| "Where should the session-authorization token live, and how long?" | `gli-gsf-security` |
+| "Is putting the DB in the same subnet as the web tier a problem for certification?" | `gli-gsf-security` |
+| "Review this Terraform security group / firewall rule for a gaming platform" | `gli-gsf-security` |
+| "How do we integrate a third-party game provider without failing a security audit?" | `gli-gsf-security` |
 | "Read this file and summarize" | (none — too simple, Claude handles directly) |
 | "Generate a Django REST view" | (none — wrong stack, all skills explicitly skip non-FastAPI / non-SQLAlchemy frameworks) |
 
@@ -171,6 +177,20 @@ Scope-honest by construction: it covers the ~96 GLI-19 requirements whose eviden
 
 Ships two commands, `/gli-19-review-diff` and `/gli-19-review-surface` — see [How they trigger](#how-they-trigger). Both refuse to emit a certification verdict or a readiness percentage: the denominator depends on scoping rulings and jurisdiction, and a number from a code reader would be read as a compliance metric it isn't. `gli-19-review-surface` additionally takes verdicts from primary artifacts only — code, schema, migrations, config, tests — and never from a README, design doc or prior audit claiming a mechanism exists. Finding the claim without the mechanism is most of its value.
 
+### `gli-gsf-security`
+
+72 rules across 15 sections — the security-engineering layer for an interactive gaming platform under the **GLI Gaming Security Framework (GLI-GSF-1)**, the framework progressively superseding the security portions of GLI-11 / GLI-19 / GLI-27 / GLI-33. Each rule maps to one or more GIS control ids and carries the control's **assurance tier** (GIG1 baseline / GIG2 / GIG3 enhanced). It is the sibling of `gli-19-platform-engineering`: that skill covers application-level gaming correctness and *deferred* the infrastructure and network security; this one **owns exactly that deferred territory** and is the deep version of the access-control, data-at-rest, communications and crypto controls the platform skill only summarized. Highlights:
+
+- **Separation of duties, twice** — the account that administers users must not be the account that uses privileges (rule 3); the developer who wrote a change must not be the sole party that ships it (rule 61). One compromised super-role otherwise defeats every audit-log-based control.
+- **Production databases isolated from patron-facing servers** — the control that turns an app-layer compromise of a public service into a contained incident instead of direct DB access. Flat networks are how an injection becomes a breach.
+- **Provider integration cannot route into production** — the classic third-party breach path. Terminate provider traffic in a DMZ; a platform that IP-routes between a vendor and production has adopted the vendor's security posture as its own.
+- **Ephemeral, per-request authorization** — authorization data cached on the component outlives its grant and travels with a compromised node; fetch-at-request-time is what makes a revocation take effect now.
+- **Immutable backups** — a backup the production credentials can delete or rewrite is a second copy with the same blast radius, not a recovery point against ransomware. Object-lock / WORM is the difference.
+- **Tamper-evident security logs** — a log an attacker can edit is not evidence; ship it off the generating host to append-only storage.
+- **Key agility** — distinct keys per purpose so rotation is routine; one key everywhere makes rotation an all-or-nothing event that never happens.
+
+Same scope honesty as its sibling: it covers the GLI-GSF-1 controls whose evidence is code, infra or config (155 of 163 cited, reported by the coverage check), carries no certification weight, and does not cover the operator's GISMS governance programme. Cross-references `gli-19-platform-engineering` (application/gaming semantics and the financial-integrity model), `money-and-payments-best-practices` (payment and ledger specifics), `observability-best-practices` (instrumentation, log correlation, redaction), and `sqlalchemy-best-practices` (ORM-level data access).
+
 Cross-references `money-and-payments-best-practices` (money representation, idempotency, double-entry structure — the gaming rules are an overlay on it), `observability-best-practices` (log centralization and tamper protection), `sqlalchemy-best-practices` (append-only schema design).
 
 ---
@@ -188,7 +208,7 @@ The patterns are tuned for an async-first modern Python backend:
 - **OpenTelemetry**: `opentelemetry-api/sdk` + OTLP HTTP exporters + `opentelemetry-instrumentation-{grpc,sqlalchemy,fastapi,logging}`; structlog for structured logging; Loki + Tempo + Mimir or Grafana Cloud as the typical backend
 - **Money handling** (when applicable): `Decimal` from stdlib **or** integer minor units (Stripe pattern); a money library (`py-money`, `dinero`, `stockholm`, `moneyed`) for non-trivial arithmetic; PostgreSQL `UNIQUE` and partial `UNIQUE` constraints as the database-level guards for idempotency and chain-CAS
 
-`gli-19-platform-engineering` is the exception — it is a **domain** skill, not a stack skill. Its rules are about what an interactive gaming platform must do, not which libraries it does it with, so they apply regardless of language or framework.
+`gli-19-platform-engineering` and `gli-gsf-security` are the exceptions — they are **domain** skills, not stack skills. Their rules are about what an interactive gaming platform must do and how its security must be built, not which libraries it uses, so they apply regardless of language or framework.
 
 Sync `grpcio`, Pydantic v1 (`Config` inner class, `@validator`), SQLAlchemy 1.x (`Column()`, `session.query()`) are explicitly **legacy**. When skills see those patterns in code, they suggest the modern equivalent and explain why.
 
@@ -246,6 +266,6 @@ The skills were created using Anthropic's official [`skill-creator`](https://git
 - **Cross-references** to sibling skills where relevant.
 - **A closing "When applying these rules" section** distinguishing footguns (be opinionated) from preferences (be flexible).
 
-`gli-19-platform-engineering` is built differently. Its `references/requirements.md` is **generated** from a machine-readable requirement catalog extracted from the standard, filtered to the requirements whose evidence is code / infra / config and stripped of any project-specific service topology. The rules in `SKILL.md` are authored on top of that filtered set, and a coverage check verifies every rule cites a real requirement id and reports which in-scope requirements no rule covers — so the skill can't silently drift from the catalog it derives from.
+The two GLI skills (`gli-19-platform-engineering` and `gli-gsf-security`) are built differently. Each `references/requirements.md` is **generated** from a machine-readable requirement catalog extracted from the standard, filtered to the requirements whose evidence is code / infra / config and stripped of any project-specific service topology and cloud-vendor names. The rules in `SKILL.md` are authored on top of that filtered set, and a coverage check verifies every rule cites a real requirement id and reports which in-scope requirements no rule covers — so the skills can't silently drift from the catalogs they derive from. The same generator produces both from a shared profile mechanism.
 
 The repo's structure mirrors Anthropic's official `claude-plugins-official` marketplace conventions — top-level `.claude-plugin/marketplace.json`, per-plugin `<plugin-name>/.claude-plugin/plugin.json`, and skills under `<plugin-name>/skills/<skill-name>/SKILL.md`.

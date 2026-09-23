@@ -1,6 +1,6 @@
 ---
 description: Full browser QA through Playwright MCP before committing — Boy Scout mode with fixes, every flow variant, a11y, UX, layout — seeded by the change, ending in a commit verdict
-argument-hint: "[app URL] [PR number | ref range — defaults to the working branch diff incl. uncommitted] [--report-only] [free-text focus]"
+argument-hint: "[PR number | ref range — defaults to the working branch diff incl. uncommitted] [--report-only] [URL override] [free-text focus]"
 ---
 
 Run the **complete** `playwright-web-qa` session in the running app and leave the product shining.
@@ -25,7 +25,7 @@ scope, mode, and verdict; the skill decides how to test and how to fix.
   before anything else. If the `browser_*` tools are missing, disconnected, or erroring, stop and ask
   the user to restore the Playwright MCP server (`/mcp`, its config, or a restart). Never substitute
   scripts, `curl`, or reading the source.
-- Parse `$ARGUMENTS`: an `http(s)://` URL is the app URL; a number is a PR (`gh pr diff <n>`); an
+- Parse `$ARGUMENTS`: an `http(s)://` URL overrides local start-up (§3); a number is a PR (`gh pr diff <n>`); an
   `a..b` / `a...b` string is a ref range; `--report-only` disables file changes; any other text is a
   focus the user wants covered in addition to the diff.
 
@@ -62,17 +62,39 @@ exactly which rings and flows remain.
 Show the charter to the user in a few lines, then proceed without waiting for approval unless
 something is genuinely missing (credentials, a safe environment, how to start the app).
 
-## 3. Find the running app
+## 3. Bring the app up locally
 
-In order: the URL from `$ARGUMENTS`; a URL named in the project's `CLAUDE.md` / README / env files
-for local development; a dev server already listening on a port the project's docs name. If none,
-start the app the way the project's docs say (and stop it at the end), or ask for the URL if
-starting it is not documented. Confirm the environment from evidence before any state-changing
-action (skill §1): this run is for local or dev — if the only target is shared or live, ask before
-submitting anything.
+This command runs in the developer's environment, and the project knows how to start itself. Do
+not ask for a URL; find the project's own way of running the app and use it.
+
+1. **Learn how the project runs**, in this order: a project skill or command for launching the app;
+   the repo's `CLAUDE.md`; README / CONTRIBUTING / `docs/`; task runners (`Makefile`, `justfile`,
+   `Taskfile.yml`, `package.json` scripts, `pyproject.toml` scripts, `Procfile`); `docker-compose*.yml`
+   / `compose*.yaml`; `.env.example` and dev config for ports, base URLs, and required variables.
+2. **Reuse before starting.** If a dev server for this project is already listening on the
+   documented port and serves the current working tree (hot reload, or started after the last
+   change), use it — and leave it running at the end, since the session did not start it.
+3. **Otherwise start what is missing**, exactly as documented: dependencies first (database,
+   cache, queue — usually via compose), then migrations and the documented seed / fixture data, then
+   the app itself as a background process. Wait for readiness on evidence — a health endpoint, the
+   "listening on" log line, or the page answering — never on a fixed sleep. Take the URL from the
+   documentation or the server's own output.
+4. **Test users and data**: use the documented dev credentials or seed accounts; if a role the
+   charter needs has none, create it through the app's own sign-up or admin flow when that is safe
+   locally, and record it for cleanup.
+5. **Ask only when the project genuinely does not say how to run it**, or when starting needs
+   something only the user has (a secret not present in any env file, a VPN, a paid sandbox).
+   Ask one precise question — the missing command or secret — not "what is the URL?".
+
+A URL in `$ARGUMENTS` overrides discovery (for a remote dev or preview environment). Wherever the
+app runs, confirm the environment from evidence before any state-changing action (skill §1); if
+the target turns out to be shared or live, ask before submitting anything.
 
 The app must serve **the working tree**. Rebuild or restart after every fix whose effect the running
 app would not pick up by hot reload; otherwise confirmation of a fix proves nothing.
+
+Everything this command started — app processes, containers, compose stacks — is stopped at the
+end (§6 cleanup); what was already running is left as found.
 
 ## 4. Run the full session
 
@@ -130,6 +152,6 @@ State plainly what the run did **not** cover — rings or flows not reached, rol
 credentials, `browser_resize` vs real devices, third-party sandboxes unavailable. A green verdict is
 evidence about what was walked, not a guarantee about the whole product.
 
-Finish with the skill's cleanup: `browser_close`, stop anything started, reset throttling and
+Finish with the skill's cleanup: `browser_close`, stop every process and container this run started (not ones that were already running), reset throttling and
 routes, remove injected styles, delete the `.playwright-mcp/` artefacts directory from the workspace
 (or confirm it is git-ignored), and list the test data created.

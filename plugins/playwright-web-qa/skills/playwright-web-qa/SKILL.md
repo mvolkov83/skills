@@ -1,6 +1,6 @@
 ---
 name: playwright-web-qa
-description: Hands-on manual / exploratory QA of web applications driven through the Playwright MCP browser tools (`browser_navigate`, `browser_snapshot`, `browser_find`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_console_messages`, `browser_network_requests`, `browser_resize`, `browser_take_screenshot`, `browser_evaluate`, `browser_run_code_unsafe`) — the way a world-class human tester works, not a click-through of the happy path. Grounded in Session-Based Test Management, the Heuristic Test Strategy Model and FEW HICCUPPS oracles, Hendrickson's Test Heuristics Cheat Sheet, Whittaker's tours, ISTQB test design, OWASP WSTG, WCAG 2.2 AA, Nielsen Norman Group heuristics and severity ratings, Baymard form research, Core Web Vitals, and BBST bug advocacy. Covers the test charter (mission, top risks, budget), oracles and the session log, environment safety, Playwright MCP mechanics (snapshot-first interaction, `browser_find`, waiting on state, console with `all: true` and network after every step, slow typing for key handlers, HttpOnly cookies, Service-Worker-blind routing, CDP throttling, isolated profiles and per-role storage state, device emulation vs resize), user flows from object life histories (happy / alternate / error / out-of-order / invalid state transitions / abandon-and-resume / first-time / per-role, conflicting edits in two tabs, one-time actions and replay, following data into search, exports and emails), per-screen functional heuristics (zero / one / many, none / some / all, list sort-filter-search-pagination, three-value boundary analysis, number and date attacks, paste and autofill, bypassing client-side validation, Back after logout and bfcache, server-side logout, session expiry, network failure, breakpoints, outputs and print), accessibility against WCAG 2.2 AA (axe-core scan per state, names / roles / states, keyboard and focus-not-obscured, forms and announced errors, status messages, contrast without rounding, 320 px reflow, 200 % zoom, text spacing, forced colors), UX evaluation (all ten Nielsen heuristics as concrete checks, cognitive-walkthrough questions per step, NN/g response-time limits, error-message and confirmation-dialog guidelines, measured LCP / CLS / interaction latency, Nielsen 0–4 severity with an evidence standard), measured visual and layout quality (shared edges, spacing scale and proximity, Baymard form composition — single column, field width, labels not placeholders, required and optional marking — type-scale inventory, line length and height, truncation, layout shift, sticky layering, image sharpness, design-token conformance), risk-picked exploratory tours, **product opportunities** (missing-feature gaps such as data shown but not filterable, no bulk action, no undo, lost filter state, no export, dead-end navigation — each grounded in evidence, valued, capped at five, never implemented without a decision), **Boy Scout mode** (widen the net, fix reproduced defects at the root with a failing-then-passing test, keep tidyings apart from behaviour fixes, confirmation then regression, bounded loop), and reporting (RIMGEA bug reports with severity separate from priority, the three-part testing story, coverage matrix, explicit untested areas). Use this skill whenever the user asks to test, QA, check, verify, smoke-test, click through, explore, audit accessibility of, review the UX or layout of, or "see if it works" for a web page, frontend, SPA, admin panel, landing page, checkout, sign-up / login / onboarding flow, or a just-implemented UI change using Playwright MCP or "the browser". Trigger even when the request is small ("open localhost:3000 and check the form", "does the new modal work?", "is the layout of this form OK?", "check alignment", "is this accessible?") or the user only says "what's missing?", "what would improve this?", "boy scout", "polish it", "make it shine", "go through the user flows", or "check the UX". Do NOT use for writing automated test code with `@playwright/test`, Cypress, Selenium or pytest-playwright (that is test authoring, not browser-driven QA), for load / performance benchmarking, for non-web targets (native mobile, desktop apps, CLI), or for analysing a user story without a running app (use `manual-qa-toolkit:analyse-story` for that).
+description: Hands-on manual / exploratory QA of web applications driven through the Playwright MCP browser tools (`browser_navigate`, `browser_snapshot`, `browser_find`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_console_messages`, `browser_network_requests`, `browser_resize`, `browser_take_screenshot`, `browser_evaluate`, `browser_run_code_unsafe`) — the way a world-class human tester works, not a click-through of the happy path. Grounded in Session-Based Test Management, the Heuristic Test Strategy Model and FEW HICCUPPS oracles, Hendrickson's Test Heuristics Cheat Sheet, Whittaker's tours, ISTQB test design, OWASP WSTG, WCAG 2.2 AA, Nielsen Norman Group heuristics and severity ratings, Baymard form research, Core Web Vitals, and BBST bug advocacy. Covers the test charter (mission, top risks, budget), oracles and the session log, environment safety, Playwright MCP mechanics (snapshot-first interaction, `browser_find`, waiting on state, console with `all: true` and network after every step, slow typing for key handlers, HttpOnly cookies, Service-Worker-blind routing, CDP throttling, isolated profiles and per-role storage state, device emulation vs resize), user flows from object life histories (happy / alternate / error / out-of-order / invalid state transitions / abandon-and-resume / first-time / per-role, conflicting edits in two tabs, one-time actions and replay, following data into search, exports and emails), per-screen functional heuristics (zero / one / many, none / some / all, list sort-filter-search-pagination, three-value boundary analysis, number and date attacks, paste and autofill, bypassing client-side validation, Back after logout and bfcache, server-side logout, session expiry, network failure, breakpoints, outputs and print), accessibility against WCAG 2.2 AA (axe-core scan per state, names / roles / states, keyboard and focus-not-obscured, forms and announced errors, status messages, contrast without rounding, 320 px reflow, 200 % zoom, text spacing, forced colors), UX evaluation (all ten Nielsen heuristics as concrete checks, cognitive-walkthrough questions per step, NN/g response-time limits, error-message and confirmation-dialog guidelines, measured LCP / CLS / interaction latency, Nielsen 0–4 severity with an evidence standard), measured visual and layout quality (shared edges, spacing scale and proximity, Baymard form composition — single column, field width, labels not placeholders, required and optional marking — type-scale inventory, line length and height, truncation, layout shift, sticky layering, image sharpness, design-token conformance), risk-picked exploratory tours, **product opportunities** (missing-feature gaps such as data shown but not filterable, no bulk action, no undo, lost filter state, no export, dead-end navigation — each grounded in evidence, valued, capped at five, never implemented without a decision), **Boy Scout mode** (widen the net, fix reproduced defects at the root with a failing-then-passing test, keep tidyings apart from behaviour fixes, confirmation then regression, bounded loop), test cases and run records persisted under `docs/qa/` (Markdown + YAML test cases per flow, an append-after-every-case run report, findings, redacted evidence — committed as a growing manual regression suite and an audit trail, resumable after interruption), and reporting (RIMGEA bug reports with severity separate from priority, the three-part testing story, coverage matrix, explicit untested areas). Use this skill whenever the user asks to test, QA, check, verify, smoke-test, click through, explore, audit accessibility of, review the UX or layout of, or "see if it works" for a web page, frontend, SPA, admin panel, landing page, checkout, sign-up / login / onboarding flow, or a just-implemented UI change using Playwright MCP or "the browser". Trigger even when the request is small ("open localhost:3000 and check the form", "does the new modal work?", "is the layout of this form OK?", "check alignment", "is this accessible?") or the user only says "what's missing?", "what would improve this?", "boy scout", "polish it", "make it shine", "go through the user flows", or "check the UX". Do NOT use for writing automated test code with `@playwright/test`, Cypress, Selenium or pytest-playwright (that is test authoring, not browser-driven QA), for load / performance benchmarking, for non-web targets (native mobile, desktop apps, CLI), or for analysing a user story without a running app (use `manual-qa-toolkit:analyse-story` for that).
 ---
 
 # Playwright Web QA — exploratory testing, user flows, UX, layout, Boy Scout mode
@@ -49,9 +49,9 @@ formal test-case design before a session, use `manual-qa-toolkit` (`analyse-stor
      it wastes triage time, and a few of them destroy trust in the whole report.
 3. **Keep a session log from the first action**, as separate lists: **notes** (what was
    covered, with which data, what was learned), **bugs**, and **issues** (open questions,
-   blockers, testability problems), and **opportunities** (missing features, §8). Mark each entry *on-charter* or *opportunity*. Write it to a
-   scratch file on long sessions so context compaction does not lose it. The report (§10) is built
-   from this log, not from memory.
+   blockers, testability problems), and **opportunities** (missing features, §8). Mark each entry *on-charter* or *opportunity*. The log lives
+   on disk as the run record (§11), appended as the session goes, so context compaction or an
+   interrupted session loses nothing. The report (§10) is built from it, not from memory.
 4. **Confirm the environment from evidence before any state-changing action** — hostname,
    environment banner, API base URL in network requests — never by assumption. Local / dev /
    staging: act freely. Production, and any environment wired to live third parties (real payment
@@ -678,60 +678,143 @@ when the codebase is available — fixed. Leave it better, not rewritten.
 ## 10. Reporting and cleanup
 
 100. **Bug report — one defect per report, written neutrally**, title describing the problem, not
-    the fix:
+     the fix:
 
-     ```
-     Title: <failure> in <where> when <condition>        (≤ 70 chars)
-     Build/commit · Env · Browser · Viewport/device · Role
-     Severity: Blocker | Critical | Major | Minor | Trivial   (impact — set by the tester)
-     Priority (suggested): P1–P4                            (urgency — the owner decides)
-     Reproducibility: always | N of M | once
-     Oracle: <claim / product consistency / standard … that says this is wrong>
-     Preconditions:
-     Steps (minimal, numbered):
-     Expected: / Actual:
-     Scope: also occurs in … / does NOT occur when …
-     Worst consequence: <data loss, money, lockout, …>
-     Workaround: <none | …>
-     Evidence: console excerpt · request + status + payload excerpt · screenshot
-     Suspected cause: <file:line, if the code was inspected>
-     ```
-    Never mark a bug reproducible without having reproduced it. Minimise the steps (isolate), look for
-    the worst consequence (maximise), and check where else it occurs and where it does not
-    (generalise) before filing.
-    - **Why:** unverified or unminimised reports get closed as "cannot reproduce"; a report without
-      scope gets a fix for one instance only.
+      ```
+      Title: <failure> in <where> when <condition>        (≤ 70 chars)
+      Build/commit · Env · Browser · Viewport/device · Role
+      Severity: Blocker | Critical | Major | Minor | Trivial   (impact — set by the tester)
+      Priority (suggested): P1–P4                            (urgency — the owner decides)
+      Reproducibility: always | N of M | once
+      Oracle: <claim / product consistency / standard … that says this is wrong>
+      Preconditions:
+      Steps (minimal, numbered):
+      Expected: / Actual:
+      Scope: also occurs in … / does NOT occur when …
+      Worst consequence: <data loss, money, lockout, …>
+      Workaround: <none | …>
+      Evidence: console excerpt · request + status + payload excerpt · screenshot
+      Suspected cause: <file:line, if the code was inspected>
+      ```
+     Never mark a bug reproducible without having reproduced it. Minimise the steps (isolate), look for
+     the worst consequence (maximise), and check where else it occurs and where it does not
+     (generalise) before filing.
+     - **Why:** unverified or unminimised reports get closed as "cannot reproduce"; a report without
+       scope gets a fix for one instance only.
 101. **UX and layout finding:** screen / flow step, heuristic or rule violated (§6, §7),
-    evidence (measured numbers for layout), user impact, severity 0–4, concrete recommendation,
-    confidence.
+     evidence (measured numbers for layout), user impact, severity 0–4, concrete recommendation,
+     confidence.
 102. **Opportunity:** the gap in one line, where it was observed, evidence type and
-    evidence (rule 92), who benefits and how often, expected value, confidence, rough
-    effort (a guess), and the question for the product owner.
+     evidence (rule 92), who benefits and how often, expected value, confidence, rough
+     effort (a guess), and the question for the product owner.
 103. **Accessibility finding:** success criterion and level (or `best-practice`), element
-    and state, evidence (axe rule id, snapshot excerpt, measurement), user impact, fix.
-104. **Report skeleton — the three-part testing story:**
+     and state, evidence (axe rule id, snapshot excerpt, measurement), user impact, fix.
+104. **Report skeleton — the three-part testing story.** It is the closing part of the run's
+     `report.md` (§11); the chat gets a short summary and the path.
 
-     ```
-     1. Verdict — product status: 2–3 lines on whether the flows under test work, top risks
-     2. Findings by severity, then priority: bugs · accessibility · UX · layout · issues (open questions)
-     3. How it was tested: charter · env/build · coverage matrix (flow × variant × breakpoint →
-        pass / fail / not tested) · oracles and tools used
-     4. How good the testing was: not tested and why · obstacles and testability problems ·
-        residual risks · confidence (low / medium / high, one line why)
-     5. Boy Scout: fixes applied (finding → root cause → files → test added → confirmation and
-        regression result) · proposals awaiting a decision
-     6. Product opportunities: top ≤ 5 by value × confidence, then one-line mentions
-     7. Outlook: recommended next charters, ranked by risk
-     8. Cleanup: test data created / removed · processes stopped
-     ```
+      ```
+      1. Verdict — product status: 2–3 lines on whether the flows under test work, top risks
+      2. Findings by severity, then priority: bugs · accessibility · UX · layout · issues (open questions)
+      3. How it was tested: charter · env/build · coverage matrix (flow × variant × breakpoint →
+         pass / fail / not tested) · oracles and tools used
+      4. How good the testing was: not tested and why · obstacles and testability problems ·
+         residual risks · confidence (low / medium / high, one line why)
+      5. Boy Scout: fixes applied (finding → root cause → files → test added → confirmation and
+         regression result) · proposals awaiting a decision
+      6. Product opportunities: top ≤ 5 by value × confidence, then one-line mentions
+      7. Outlook: recommended next charters, ranked by risk
+      8. Cleanup: test data created / removed · processes stopped
+      ```
 105. **Explicitly list what was not tested** and why (no credentials for a role, payment
-    sandbox unavailable, environment down). Never write "everything works" — write what was verified.
-    A report that hides its gaps is worse than a short one.
+     sandbox unavailable, environment down). Never write "everything works" — write what was verified.
+     A report that hides its gaps is worse than a short one.
 106. **Clean up:** `browser_close` when the session ends; stop any dev server or background
-    process started for the session; reset throttling and remove `page.route` interceptions and
-    injected styles; remove or list the test data created (rule 5). Playwright MCP writes
-    snapshots, console logs, and screenshots into `.playwright-mcp/` under the workspace root —
-    delete it (or confirm it is git-ignored) so session artefacts never land in a commit.
+     process started for the session; reset throttling and remove `page.route` interceptions and
+     injected styles; remove or list the test data created (rule 5). Playwright MCP writes
+     snapshots, console logs, and screenshots into `.playwright-mcp/` under the workspace root — move
+     the files cited as evidence into the run's `evidence/` (rule 114), then delete the
+     directory (or confirm it is git-ignored) so raw session artefacts never land in a commit.
+
+## 11. Test cases and run records on disk
+
+Test cases and every run's record are files in the repository, committed with the code: cases are
+the project's growing manual regression suite, runs are the evidence of what was tested, how, and
+what the product did at that commit — so a later failure can be traced to when it last worked and
+how it was checked.
+
+107. **Layout** — conform to an existing QA directory or convention in the repo if there is
+     one; otherwise:
+
+      ```
+      docs/qa/
+      ├── cases/<flow-slug>/
+      │   ├── _flow.md               # persona → goal → entry → success; list of the flow's cases
+      │   └── TC-<flow-slug>-NNN.md  # one test case per file
+      └── runs/<YYYY-MM-DD-HHMM>-<branch-slug>/
+          ├── report.md              # charter, plan, per-case results, final story
+          ├── findings.md            # bugs, a11y, UX, layout, opportunities, issues
+          └── evidence/              # screenshots and text excerpts cited by results and findings
+      ```
+108. **Test case format** — Markdown with YAML front matter, one case per file:
+
+      ```markdown
+      ---
+      id: TC-checkout-007            # stable, never reused
+      flow: checkout
+      title: Paying twice via Back is refused
+      variant: replay                # happy | alternate | error | out-of-order | transition | abandon |
+                                     # first-time | role | conflict | replay | a11y | layout | …
+      technique: error-guessing      # EP | BVA | decision-table | state-transition | use-case | error-guessing | …
+      priority: high                 # high | medium | low — from the risk it guards
+      oracle: claim — "each order is charged once" (AC-12)
+      tags: [money, regression]
+      origin: BUG-20260923-03        # where it came from: charter | tour | finding id
+      status: active                 # active | deprecated (with reason)
+      last_run: { date: 2026-09-23, result: pass, run: 2026-09-23-1430-feature-x }
+      ---
+      **Preconditions:** logged in as buyer; cart with one item.
+
+      1. Pay with the test card → confirmation page, order number shown.
+      2. Press Back, submit the payment form again → "already paid" message; no second charge in the
+         order history.
+      ```
+     Every step has its expected result; the oracle is named (rule 2). Data and credentials
+     are referenced by their documented names, never pasted secrets.
+109. **Plan before executing.** Read the existing cases of the in-scope flows. The run plan
+     is: affected existing cases first (regression), then new cases for the flow variants and
+     heuristics the charter calls for. Write each new case to disk **before** executing it, and add
+     it to its flow's `_flow.md`. Record the plan in `report.md` with every case `pending`.
+110. **Append after every case — never batch.** Immediately after a case is executed, append
+     its result block to `report.md` and set its `last_run`:
+
+      ```markdown
+      ### TC-checkout-007 — Paying twice via Back is refused — FAIL
+      - Actual: second submit created order #1042 and a second charge.
+      - Findings: BUG-20260923-03 · Evidence: evidence/tc-checkout-007-order-history.png,
+        evidence/tc-checkout-007-network.txt
+      ```
+     Status is one of `pass`, `fail`, `blocked` (with the blocker), `skipped` (with the reason).
+     Exploration is recorded the same way, as `### Tour: <name>` blocks with what was covered and
+     found. Findings go to `findings.md` as they are found, in the formats of §10.
+     - **Why:** a report assembled at the end is reconstructed from memory — after a long session,
+       context compaction, or an interruption, results silently go missing or get invented.
+111. **Every bug becomes a test case.** When a bug is found, write the case that reproduces
+     it (`origin: <finding id>`); after the fix it is the confirmation test and stays in the
+     regression suite. Valuable checks discovered while exploring also become cases.
+112. **Keep cases truthful.** When behaviour changed on purpose, update the case and note
+     in the report "case updated — reason"; it is not a bug. When a case no longer applies, set
+     `status: deprecated` with the reason instead of deleting it.
+113. **Resume, don't restart.** At the start, look for a run of the current branch whose
+     `report.md` has no final verdict; continue it from the first `pending` case unless the user asks
+     for a fresh run.
+114. **Evidence is committed — keep it small and clean.** Prefer text (console excerpt,
+     request line, status, trimmed payload) over screenshots; screenshot only for visual proof or a
+     failure, viewport-only unless the page matters. Redact tokens, cookies, auth headers, API keys,
+     and personal data from every excerpt, and never capture a screen that shows a secret. Name files
+     after the case or finding they support.
+115. **Close the run on disk.** Append the report skeleton of rule 104 to `report.md`,
+     built from what is already in the file, and set the report's status line from `in progress` to
+     `complete`. The chat summary points to the file.
 
 ## When applying these rules
 
@@ -745,7 +828,8 @@ when the codebase is available — fixed. Leave it better, not rewritten.
   73 (measure before interacting), rule 76 (measure layout, don't eyeball), rule 95
   (tidyings mixed with behaviour changes), rule 96 (masked symptoms, fixes without a failing
   test), rule 100 (unverified reproducibility), rule 92 (no evidence, no
-  opportunity — wish lists bury real findings), rule 105 (report what was not tested).
+  opportunity — wish lists bury real findings), rule 105 (report what was not tested), rule 110 (append after
+  every case, never batch at the end), rule 114 (committed evidence must be redacted).
 - **Scale the session to the change and its risk:** a one-line UI change in scoped mode deserves
   the functional pass on the touched screen, its flow's happy and error variants, the minimum
   breakpoint set, an axe scan, and the console / network check — not every tour. Money, auth, and

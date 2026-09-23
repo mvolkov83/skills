@@ -10,7 +10,8 @@ This is the pre-commit gate for user-facing work, the browser counterpart of `/c
 **Defaults are maximal — no scaling down.** Boy Scout mode, fixing, every flow variant, the full
 breakpoint set, accessibility, UX, layout, exploratory tours, and product opportunities are all on.
 The skill's advice to "scale the session to the change" does **not** apply to this command. The
-only opt-out is `--report-only` (test and report everything, change no files).
+only opt-out is `--report-only` (test and report everything, change no product files — the QA
+records under `docs/qa/` are still written).
 
 **The diff seeds the session; it does not fence it.** The change decides *where testing starts and
 what gets regression priority*. It never limits what is looked at, reported, or fixed: every defect
@@ -59,6 +60,13 @@ product (money, auth, data loss). Mode: **Boy Scout**. Budget: until the skill's
 criterion is met — or until the user stops it; if the session must end early, the report says
 exactly which rings and flows remain.
 
+**Test cases and the run record** (skill §11): resume an unfinished run of this branch if one
+exists; otherwise create `docs/qa/runs/<YYYY-MM-DD-HHMM>-<branch-slug>/` and write the charter to
+its `report.md` (status `in progress`). Read the existing cases under `docs/qa/cases/` for every
+flow in the three rings; the plan is those cases first — seed-ring cases, then reach, then product
+— followed by new cases for the variants and heuristics not yet covered, each written to disk
+before it is executed. Record the plan with every case `pending`.
+
 Show the charter to the user in a few lines, then proceed without waiting for approval unless
 something is genuinely missing (credentials, a safe environment, how to start the app).
 
@@ -101,7 +109,10 @@ end (§6 cleanup); what was already running is left as found.
 Execute every section of the skill on rings 1 → 2 → 3: all flow variants, the full breakpoint set,
 functional heuristics, axe and the keyboard walk per screen and state, UX walkthrough and severity,
 the measured layout pass, exploratory tours, product-opportunity hunting, console and network after
-every step. Keep the session log.
+every step. Execute the plan case by case and **append each result to `report.md` the moment the
+case finishes** (skill §11), findings to `findings.md` as they are found, and evidence to the run's
+`evidence/` with secrets and personal data redacted. Every bug becomes a test case; tours are
+recorded as they run. Nothing is held in memory for the end.
 
 Classify each finding by origin:
 
@@ -127,12 +138,14 @@ cleanly:
 - **Change fixes** — repairs to Introduced findings; they belong with the user's change.
 - **Boy Scout fixes** — repairs to Pre-existing defects; separate commit(s), one concern each.
 - **Tidyings** — presentation-only cleanups; their own commit.
+- **QA records** — new and updated cases under `docs/qa/cases/` and this run's directory under
+  `docs/qa/runs/`; they belong with the change they tested (or their own `test(qa): …` commit).
 
 List the files of each group and a suggested Conventional Commits message per group.
 
 ## 6. Verdict and report
 
-Produce the skill's report skeleton (§10) with findings split into **Introduced**, **Unclear**,
+Close the run on disk (skill §11): append the report skeleton (§10) to `report.md` with findings split into **Introduced**, **Unclear**,
 **Pre-existing**, **Proposals**, and **Opportunities**, each marked *fixed* / *open*. Then end with
 exactly one verdict line:
 
@@ -146,12 +159,14 @@ exactly one verdict line:
   data missing, environment not safe, Playwright MCP lost). Say exactly what was not covered.
 
 Proposals and opportunities that do not hide a blocking defect do not block the commit; they are
-listed for the product owner.
+listed for the product owner. Write the verdict into `report.md`, set its status to `complete`, and
+give the user the verdict, the blocking findings, and the path to the report.
 
 State plainly what the run did **not** cover — rings or flows not reached, roles without
 credentials, `browser_resize` vs real devices, third-party sandboxes unavailable. A green verdict is
 evidence about what was walked, not a guarantee about the whole product.
 
 Finish with the skill's cleanup: `browser_close`, stop every process and container this run started (not ones that were already running), reset throttling and
-routes, remove injected styles, delete the `.playwright-mcp/` artefacts directory from the workspace
-(or confirm it is git-ignored), and list the test data created.
+routes, remove injected styles, move cited evidence out of `.playwright-mcp/` into the run's
+`evidence/` and then delete that directory (or confirm it is git-ignored), and list the test data
+created.

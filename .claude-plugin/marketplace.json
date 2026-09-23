@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mvolkov-skills",
-  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, OpenTelemetry observability, money / payments / ledger engineering — plus two domain skills for interactive-gaming-platform work: GLI-19 platform certification readiness and GLI Gaming Security Framework (GLI-GSF) security engineering",
+  "description": "Claude Code plugin marketplace bundling best-practices skills for an async-first Python backend stack — SQLAlchemy 2.0, FastAPI, pytest, gRPC (grpc.aio), git workflow, OpenTelemetry observability, money / payments / ledger engineering — a Playwright-MCP-driven web QA skill (user flows, UX, Boy Scout mode) — plus two domain skills for interactive-gaming-platform work: GLI-19 platform certification readiness and GLI Gaming Security Framework (GLI-GSF) security engineering",
   "owner": {
     "name": "Mykhailo Volkov",
     "email": "mvolkov83@gmail.com"
@@ -96,6 +96,16 @@
       },
       "category": "development",
       "source": "./plugins/gli-gsf-security"
+    },
+    {
+      "name": "playwright-web-qa",
+      "description": "Manual / exploratory web QA through the Playwright MCP browser tools — snapshot-first interaction, console + network inspection after every step, user-flow walking (happy / alternate / error / abandon-and-resume / first-time / per-role), functional heuristics per screen, accessibility via the accessibility tree, Nielsen-based UX evaluation with 0-4 severity, measured layout quality (alignment, spacing rhythm, form composition and field balance, typography), and Boy Scout mode that fixes everything found at the root and re-verifies until clean",
+      "author": {
+        "name": "Mykhailo Volkov",
+        "email": "mvolkov83@gmail.com"
+      },
+      "category": "testing",
+      "source": "./plugins/playwright-web-qa"
     }
   ]
 }

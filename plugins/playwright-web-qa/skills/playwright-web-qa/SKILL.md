@@ -63,8 +63,14 @@ formal test-case design before a session, use `manual-qa-toolkit` (`analyse-stor
 5. Use clearly synthetic test data (`qa+<scenario>@example.com`, names prefixed `QA`), never
    real people's personal data, so artefacts created by the session are identifiable and
    cleanable. Record everything created in the log.
-6. If the app is not running and the codebase is available, start it the way the project's
-   own docs say — and stop it at the end (rule 106).
+6. **Bring the app up yourself** when the codebase is available — do not ask for a URL. Learn
+   how the project runs from its own sources (a project launch skill, `CLAUDE.md`, README, task
+   runners such as `Makefile` / `package.json` scripts, compose files, `.env.example`), reuse a dev
+   server that already serves the working tree, otherwise start dependencies, migrations, seed data,
+   and the app as documented, and wait for readiness on evidence (health endpoint, "listening" log
+   line), never a fixed sleep. Ask only for what the project cannot provide (a missing secret, VPN,
+   or undocumented start command). Stop what you started at the end (rule 106); leave what
+   was already running.
 
 ## 2. Playwright MCP mechanics
 

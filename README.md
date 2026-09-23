@@ -1,6 +1,6 @@
 # mvolkov-skills
 
-> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering** — plus two domain skills for interactive-gaming-platform work: **GLI-19 platform certification readiness** and **GLI Gaming Security Framework (GLI-GSF) security engineering**.
+> A [Claude Code](https://claude.com/claude-code) plugin marketplace bundling production-tested best-practices skills for an async-first Python backend stack — **SQLAlchemy 2.0, FastAPI, pytest, gRPC (`grpc.aio`), git workflow, OpenTelemetry observability, and money / payments / ledger engineering** — a **Playwright-MCP-driven web QA** skill (user flows, UX evaluation, Boy Scout mode) — plus two domain skills for interactive-gaming-platform work: **GLI-19 platform certification readiness** and **GLI Gaming Security Framework (GLI-GSF) security engineering**.
 
 If you're using Claude Code on Python projects with this stack, these skills make Claude consistent with conventions the team has already converged on, without bloating your context. Each skill lazy-loads only when relevant — no cost on conversations where it doesn't apply.
 
@@ -8,7 +8,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 
 ## What's inside
 
-9 standalone skills. Install only what you need:
+10 standalone skills. Install only what you need:
 
 | Plugin | Triggers on | Adds guidance for |
 |---|---|---|
@@ -21,6 +21,7 @@ If you're using Claude Code on Python projects with this stack, these skills mak
 | **[`money-and-payments-best-practices`](plugins/money-and-payments-best-practices/skills/money-and-payments-best-practices/SKILL.md)** | imports of `decimal.Decimal`, money libraries (`py-money` / `dinero` / `stockholm` / `moneyed`), code defining `Transaction` / `Transfer` / `Ledger` / `Journal` / `Account` / `Balance` ORM models, payment / charge / refund / chargeback handlers, idempotency_key handling, PSP webhook code, `parent_transaction_id` references | Engineering best practices for money / payments / ledger systems — Decimal or integer minor units (never float), the two-layer idempotency model (`idempotency_key` + chain CAS, never conflated), double-entry ledger (Accounts + Transfers, append-only, balance computed not stored), two-phase transfers via HOLD, atomic chains, OCC state machines, stateless proxy for PSP integration with three-layer webhook dedup, reversibility via separate transaction with `parent_transaction_id`, DB-enforced invariants |
 | **[`gli-19-platform-engineering`](plugins/gli-19-platform-engineering/skills/gli-19-platform-engineering/SKILL.md)** | online casino / interactive gaming work — player accounts and wallets, game sessions and rounds, RGS or aggregation layers, bonus and jackpot engines, back-office adjustment and void endpoints, tables named like `rounds` / `transactions` / `player_accounts` / `bonuses`, phrases like "RTP", "self-exclusion", "game recall", "significant event log", "GLI" | GLI-19 v3.0 certification readiness — server-authoritative outcomes, authoritative system clock, the records a gaming system must maintain (play record, per-theme aggregates, player-account record, significant-event log), append-only financial history with integrity hashing and actor attribution, supervised alteration of accounting data, restricted-credits-first wagering order, game-cycle exclusivity and interrupted-game completion, account lifecycle and MFA boundaries, most-restrictive limit precedence, geolocation, disable controls, regulator reporting surfaces |
 | **[`gli-gsf-security`](plugins/gli-gsf-security/skills/gli-gsf-security/SKILL.md)** | securing / hardening / auditing a gaming platform or its infra — access control and RBAC, authn and session management, secrets and key rotation, encryption at rest and in transit, network segmentation and firewall rules, DNSSEC, remote access, SIEM, immutable backups, disaster recovery, secure SDLC, provider integration; phrases like "gaming security", "GLI-GSF", "least privilege", "default-deny", "tamper-evident log", one firewall rule or one service account | GLI Gaming Security Framework (GLI-GSF-1) — the deep security layer beneath GLI-19's Appendix B, owning the infra/network security it deferred: logical access with separation of duties, ephemeral session authorization, key agility, data-at-rest encryption, production-DB network isolation, hardening, default-deny firewalls with no bypass path, tamper-evident logging, immutable off-site backups, release segregation of duties, and provider integration that cannot route into production. Rules carry GIG1/GIG2/GIG3 assurance tiers |
+| **[`playwright-web-qa`](plugins/playwright-web-qa/skills/playwright-web-qa/SKILL.md)** | testing / QA-ing / smoke-testing a web page, SPA or UI change through the Playwright MCP browser, walking user flows, "check the UX", "boy scout", "polish it" | Browser-driven exploratory QA — snapshot-first Playwright MCP mechanics, console + network after every step, user-flow walking in all variants (happy / alternate / error / abandon-and-resume / first-time / per-role), per-screen functional heuristics, accessibility via the a11y tree, Nielsen-based UX evaluation with 0–4 severity, measured layout quality (alignment, spacing rhythm, form composition and field balance, typography), Boy Scout mode that fixes findings at the root and loops until clean, structured QA report |
 
 Each skill is **depersonalized** — generic placeholder names (`MyService`, `MyServiceClient`, `MyServiceError`) instead of project-specific symbols. Patterns are anchored in real production code but written to apply across any project that follows the same stack.
 
@@ -41,6 +42,7 @@ In any Claude Code session:
 /plugin install money-and-payments-best-practices@mvolkov-skills
 /plugin install gli-19-platform-engineering@mvolkov-skills
 /plugin install gli-gsf-security@mvolkov-skills
+/plugin install playwright-web-qa@mvolkov-skills
 /reload-plugins
 ```
 
@@ -56,7 +58,7 @@ A [Claude Code skill](https://code.claude.com/docs/en/skills) is a markdown file
 
 Each plugin in this marketplace ships exactly one skill. The skill body is plain markdown — no code execution, no surprises. Read any `SKILL.md` to see exactly what guidance Claude gets when the skill triggers.
 
-One plugin also ships **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
+Some plugins also ship **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
 
 | Command | Scope | Answers |
 |---|---|---|
@@ -64,6 +66,7 @@ One plugin also ships **slash commands**. Skills trigger themselves and answer "
 | `/gli-19-review-surface` | a service or module path | which requirements the service *does not implement* |
 | `/gsf-security-review-diff` | a PR, a ref range, or the working branch diff (incl. infra) | which security controls *this change* violates or weakens |
 | `/gsf-security-review-surface` | a service or infrastructure path | which security controls the service/infra *does not implement* |
+| `/web-qa` | the full product in the running app, seeded by the working branch diff incl. uncommitted changes (or a PR / ref range) | a complete Boy Scout QA session by default — every flow variant, full breakpoints, accessibility, UX, layout, tours, opportunities — fixing what it finds (introduced and pre-existing), ending in **Ready to commit / Fix before commit / Cannot verify**; `--report-only` is the only opt-out |
 
 The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate, a regulator report, an immutable backup or a network segment doesn't exist, because that isn't in the changed lines. The surface commands exist for exactly those findings, and each opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong. (The security surface command additionally credits controls *inherited* from the cloud/managed platform, but only against the config that proves the control is on.)
 
@@ -104,6 +107,8 @@ Skills fire on substantive design / review / debugging work where conventions ma
 | "Is putting the DB in the same subnet as the web tier a problem for certification?" | `gli-gsf-security` |
 | "Review this Terraform security group / firewall rule for a gaming platform" | `gli-gsf-security` |
 | "How do we integrate a third-party game provider without failing a security audit?" | `gli-gsf-security` |
+| "Open localhost:3000 and check the new sign-up form" | `playwright-web-qa` |
+| "Go through the checkout user flows in the browser, boy scout mode" | `playwright-web-qa` |
 | "Read this file and summarize" | (none — too simple, Claude handles directly) |
 | "Generate a Django REST view" | (none — wrong stack, all skills explicitly skip non-FastAPI / non-SQLAlchemy frameworks) |
 
@@ -208,6 +213,23 @@ Same scope honesty as its sibling: it covers the GLI-GSF-1 controls whose eviden
 Ships two commands, `/gsf-security-review-diff` and `/gsf-security-review-surface` — see [How they trigger](#how-they-trigger). The diff command gates by security domain and reads infrastructure diffs (Terraform / Helm / security groups / IAM), not just application code; the surface command establishes what is owned vs *inherited* from the cloud/managed platform before it judges, credits an inherited control only against the config that proves it is enabled, and takes verdicts from primary artifacts — never from a policy document asserting a control exists. Neither emits a certification verdict, an assurance-tier attainment, or a security score.
 
 Cross-references `money-and-payments-best-practices` (money representation, idempotency, double-entry structure — the gaming rules are an overlay on it), `observability-best-practices` (log centralization and tamper protection), `sqlalchemy-best-practices` (append-only schema design).
+
+### `playwright-web-qa`
+
+106 rules across 10 sections — the judgment layer on top of the Playwright MCP browser tools. The tools give Claude hands (navigate, click, type, snapshot); this skill tells it what to look at and how to decide something is a problem, so a browser session stops being a happy-path click-through. Every section was validated against primary sources — Session-Based Test Management, HTSM and FEW HICCUPPS oracles, Hendrickson's heuristics cheat sheet, Whittaker's tours, ISTQB, OWASP WSTG, WCAG 2.2, NN/g, Baymard, web.dev Core Web Vitals, BBST bug advocacy — listed per section in [`references/sources.md`](plugins/playwright-web-qa/skills/playwright-web-qa/references/sources.md); the embedded measurement snippets (axe-core, layout geometry, type inventory, Web Vitals, CDP throttling) were run live through Playwright MCP. Highlights:
+
+- **Console + network after every meaningful action** — most SPA failures are silent in the UI (a swallowed 500, a retry storm, an unhandled rejection); a screen that looks fine while the console throws is a defect.
+- **User flows as the backbone** — build a flow inventory (`persona → goal → entry → steps → success`), walk each one as a user with a goal, in every variant: happy, alternate, error, abandon-and-resume, first-time vs returning, per role. Then **verify the outcome, not the toast**: the change is in the list, survives reload and re-login, shows up in the other flows that read it.
+- **UX evaluation, evidence-based** — Nielsen heuristics turned into concrete checks (feedback within ~100 ms, jargon-free labels, undo over confirm, error messages that say how to fix, friction counts per flow, one primary action per screen, 44 px touch targets), each finding graded 0–4 and tied to a heuristic, not a preference.
+- **Layout quality, measured not eyeballed** — screenshots hide a 4 px misalignment, so the skill measures bounding boxes and computed styles via `browser_evaluate`: shared edges and baselines, a consistent spacing scale and label-to-field proximity, form composition (single column for sequential forms, field width matching expected input, balanced rows, consistent label / help / error placement, primary action placement), a typography inventory, image distortion, state changes that shift layout, and design-token conformance. Findings cite the measured numbers.
+- **Product opportunities** — besides what is broken, the skill looks for what is *missing*: data shown but not filterable or sortable, actions with no bulk variant, no undo, filter state lost on reload, no export, dead-end navigation. Each opportunity needs evidence (observed friction, inconsistency with the rest of the product, conventions of comparable products, the product's own claims), gets a value and confidence estimate, is capped at five per session, and is framed as a question for the product owner — never implemented without a decision.
+- **Boy Scout mode** — on request, the session does not stop at the ticket: it widens to reachable flows and sibling components, triages every finding into *fix now* (local, low-risk defects — fixed at the root in the codebase and re-verified in the browser) vs *propose* (anything that changes product behaviour, money, auth or contracts), and loops until no console errors, failing flows, or severity-3/4 findings remain.
+- **Oracles, not opinions** — every reported problem names what says it is wrong (a claim, the product's own consistency, a standard…); an expectation with no oracle is logged as an open question, not a bug. And no Playwright MCP, no session: if the browser tools are down, the skill stops and asks for them to be restored instead of faking the test with scripts or `curl`.
+- **Accessibility against WCAG 2.2 AA** — an axe-core scan per screen *and* state, keyboard and focus-not-obscured walks, announced form errors, contrast without rounding, 320 px reflow, 200 % zoom, text spacing; 24 px (AA) vs 44 px (AAA) target sizes kept apart.
+- **`/web-qa` pre-commit gate** — the browser counterpart of `/code-review` and `/security-review`, with no compromises by default: the full skill in Boy Scout mode, fixing as it goes. The diff *seeds* the session — changed screens and flows are tested first and deepest, then everything reachable, then the product's primary flows — but never fences what is found or fixed. Findings are classified as introduced by the change or pre-existing (both fixed), fixes are grouped into change / Boy Scout / tidying commits with suggested messages, and the run ends in one verdict line. It stops at once if Playwright MCP is unavailable and never commits, stages, or stashes.
+- **Honest reporting** — bug reports with repro and evidence, a flow × variant coverage matrix, and an explicit *not tested* list. "Everything works" is never a valid conclusion; "these flows were verified" is.
+
+Also covers Playwright MCP footguns (stale element refs after re-render, waiting on state instead of time, the persistent browser profile's cache and lock, fault injection via `page.route` / `setOffline`) and environment safety (no state-changing actions on production without explicit approval). Cross-references `manual-qa-toolkit` (story analysis and test-case design before the session), `pytest-best-practices` (regression tests for backend defects found), and `git-workflow-best-practices` (splitting Boy Scout fixes into commits).
 
 ---
 

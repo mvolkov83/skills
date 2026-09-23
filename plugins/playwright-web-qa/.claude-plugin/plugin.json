@@ -1,6 +1,6 @@
 {
   "name": "playwright-web-qa",
-  "description": "Manual / exploratory web QA driven through the Playwright MCP browser tools — Playwright MCP mechanics (snapshot-first, stale refs, console + network after every step), user-flow discovery and end-to-end walking in all variants, per-screen functional heuristics, accessibility, UX evaluation with severity grading, measured layout quality (alignment, spacing, form composition and field balance, typography), and Boy Scout mode that fixes everything found on the way at the root and re-verifies until the product is polished",
+  "description": "Manual / exploratory web QA driven through the Playwright MCP browser tools — Playwright MCP mechanics (snapshot-first, stale refs, console + network after every step), user-flow discovery and end-to-end walking in all variants, per-screen functional heuristics, accessibility, UX evaluation with severity grading, measured layout quality (alignment, spacing, form composition and field balance, typography), and Boy Scout mode that fixes everything found on the way at the root and re-verifies until the product is polished. Ships the /web-qa pre-commit command: a full Boy Scout browser session seeded by the diff, fixing what it finds, ending in Ready to commit / Fix before commit / Cannot verify",
   "author": {
     "name": "Mykhailo Volkov",
     "email": "mvolkov83@gmail.com"

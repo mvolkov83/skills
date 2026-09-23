@@ -58,7 +58,7 @@ A [Claude Code skill](https://code.claude.com/docs/en/skills) is a markdown file
 
 Each plugin in this marketplace ships exactly one skill. The skill body is plain markdown — no code execution, no surprises. Read any `SKILL.md` to see exactly what guidance Claude gets when the skill triggers.
 
-One plugin also ships **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
+Some plugins also ship **slash commands**. Skills trigger themselves and answer "how should this be built"; commands are invoked deliberately, over a scope you name, and answer "what is wrong with what exists":
 
 | Command | Scope | Answers |
 |---|---|---|
@@ -66,6 +66,7 @@ One plugin also ships **slash commands**. Skills trigger themselves and answer "
 | `/gli-19-review-surface` | a service or module path | which requirements the service *does not implement* |
 | `/gsf-security-review-diff` | a PR, a ref range, or the working branch diff (incl. infra) | which security controls *this change* violates or weakens |
 | `/gsf-security-review-surface` | a service or infrastructure path | which security controls the service/infra *does not implement* |
+| `/web-qa` | the full product in the running app, seeded by the working branch diff incl. uncommitted changes (or a PR / ref range) | a complete Boy Scout QA session by default — every flow variant, full breakpoints, accessibility, UX, layout, tours, opportunities — fixing what it finds (introduced and pre-existing), ending in **Ready to commit / Fix before commit / Cannot verify**; `--report-only` is the only opt-out |
 
 The split is deliberate: a diff review cannot find absence. It cannot see that a per-theme aggregate, a regulator report, an immutable backup or a network segment doesn't exist, because that isn't in the changed lines. The surface commands exist for exactly those findings, and each opens by establishing the ownership boundary with you before it judges anything — a wrong boundary makes every verdict downstream of it wrong. (The security surface command additionally credits controls *inherited* from the cloud/managed platform, but only against the config that proves the control is on.)
 
@@ -225,6 +226,7 @@ Cross-references `money-and-payments-best-practices` (money representation, idem
 - **Boy Scout mode** — on request, the session does not stop at the ticket: it widens to reachable flows and sibling components, triages every finding into *fix now* (local, low-risk defects — fixed at the root in the codebase and re-verified in the browser) vs *propose* (anything that changes product behaviour, money, auth or contracts), and loops until no console errors, failing flows, or severity-3/4 findings remain.
 - **Oracles, not opinions** — every reported problem names what says it is wrong (a claim, the product's own consistency, a standard…); an expectation with no oracle is logged as an open question, not a bug. And no Playwright MCP, no session: if the browser tools are down, the skill stops and asks for them to be restored instead of faking the test with scripts or `curl`.
 - **Accessibility against WCAG 2.2 AA** — an axe-core scan per screen *and* state, keyboard and focus-not-obscured walks, announced form errors, contrast without rounding, 320 px reflow, 200 % zoom, text spacing; 24 px (AA) vs 44 px (AAA) target sizes kept apart.
+- **`/web-qa` pre-commit gate** — the browser counterpart of `/code-review` and `/security-review`, with no compromises by default: the full skill in Boy Scout mode, fixing as it goes. The diff *seeds* the session — changed screens and flows are tested first and deepest, then everything reachable, then the product's primary flows — but never fences what is found or fixed. Findings are classified as introduced by the change or pre-existing (both fixed), fixes are grouped into change / Boy Scout / tidying commits with suggested messages, and the run ends in one verdict line. It stops at once if Playwright MCP is unavailable and never commits, stages, or stashes.
 - **Honest reporting** — bug reports with repro and evidence, a flow × variant coverage matrix, and an explicit *not tested* list. "Everything works" is never a valid conclusion; "these flows were verified" is.
 
 Also covers Playwright MCP footguns (stale element refs after re-render, waiting on state instead of time, the persistent browser profile's cache and lock, fault injection via `page.route` / `setOffline`) and environment safety (no state-changing actions on production without explicit approval). Cross-references `manual-qa-toolkit` (story analysis and test-case design before the session), `pytest-best-practices` (regression tests for backend defects found), and `git-workflow-best-practices` (splitting Boy Scout fixes into commits).

@@ -99,7 +99,7 @@
     },
     {
       "name": "playwright-web-qa",
-      "description": "Manual / exploratory web QA through the Playwright MCP browser tools — snapshot-first interaction, console + network inspection after every step, user-flow walking (happy / alternate / error / abandon-and-resume / first-time / per-role), functional heuristics per screen, accessibility via the accessibility tree, Nielsen-based UX evaluation with 0-4 severity, measured layout quality (alignment, spacing rhythm, form composition and field balance, typography), and Boy Scout mode that fixes everything found at the root and re-verifies until clean",
+      "description": "Manual / exploratory web QA through the Playwright MCP browser tools — snapshot-first interaction, console + network inspection after every step, user-flow walking (happy / alternate / error / abandon-and-resume / first-time / per-role), functional heuristics per screen, accessibility via the accessibility tree, Nielsen-based UX evaluation with 0-4 severity, measured layout quality (alignment, spacing rhythm, form composition and field balance, typography), and Boy Scout mode that fixes everything found at the root and re-verifies until clean; ships the /web-qa pre-commit command (full Boy Scout browser QA seeded by the diff, with fixes and a commit verdict)",
       "author": {
         "name": "Mykhailo Volkov",
         "email": "mvolkov83@gmail.com"

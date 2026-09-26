@@ -20,6 +20,7 @@ plugins/<plugin-name>/
 ```
 
 Each plugin in this marketplace ships **exactly one skill** (granular one-plugin-per-skill so consumers can install only what they need). The plugin and skill directory names are the same by convention.
+A plugin may also ship slash commands in `plugins/<name>/commands/<cmd>.md` (frontmatter `description`, `argument-hint`, optional `allowed-tools`; body uses `$ARGUMENTS`) and long reference material in `skills/<name>/references/` — see `gli-gsf-security`, `playwright-web-qa`.
 
 ## Adding a new skill
 
@@ -29,6 +30,9 @@ Each plugin in this marketplace ships **exactly one skill** (granular one-plugin
 4. Add an entry to `plugins[]` in `.claude-plugin/marketplace.json` with `name`, `description`, `author`, `category`, `source: "./plugins/<name>"`.
 5. Symlink for local dev: `ln -s "$PWD/plugins/<name>/skills/<name>" "$HOME/.claude/skills/<name>"`.
 6. Commit. Consumers run `/plugin marketplace update <alias>` to pick up new commits.
+7. Validate: `claude plugin validate plugins/<name>` (the "no version" warning is expected — no plugin here sets `version`).
+8. Consumers only see pushed commits: after `git push`, run `claude plugin marketplace update mvolkov-skills` then `claude plugin install <name>@mvolkov-skills` (or `claude plugin update …`); changes apply after `/reload-plugins` or a restart.
+9. Local dev for a command: `ln -s "$PWD/plugins/<name>/commands/<cmd>.md" ~/.claude/commands/<cmd>.md`. Remove the skill/command symlinks once the plugin is installed from the marketplace — both register the same name.
 
 For an interactive Q&A workflow + optional eval-loop, install Anthropic's `skill-creator` plugin (`/plugin install skill-creator@claude-plugins-official`) and invoke it for skill drafting / description optimization.
 
@@ -64,6 +68,10 @@ Skills are imperative rules. Add a `**Why:**` line under a rule **only when ther
 
 When a rule's territory genuinely belongs to another skill in this marketplace, defer to it explicitly in prose ("For ORM session details, defer to the `sqlalchemy-best-practices` skill"). Cross-references prevent duplication, let each skill stay focused, and signal to the model which authority to consult.
 
+### Numbered rules and cross-references
+
+Rules are numbered continuously across sections and referenced in prose by number ("rule 70", "§9"). Inserting or removing a rule shifts every later number: renumber and fix all `rule N` / `§N` references in the same edit (script it — grep `rule [0-9]+` before and after), and keep list continuation lines indented to the number's width (4 spaces for 2-digit, 5 for 3-digit) so nested `- **Why:**` bullets and code fences stay inside the item.
+
 ### Closing "When applying these rules" section
 
 Every `SKILL.md` ends with this section. It distinguishes:
@@ -85,6 +93,8 @@ Two parallel installation paths coexist for this repo:
 - **Marketplace distribution (consumers)**: `/plugin marketplace add <repo>` clones the repo into `~/.claude/plugins/marketplaces/<alias>/`. Skills are loaded from that clone, updated via `/plugin marketplace update <alias>`.
 
 Don't mix the two on the same machine — both register the same skill name and conflict. Use symlinks during development; consumers use the marketplace flow.
+
+Driving Playwright MCP from this repo (e.g. live-checking a skill's JS snippets) leaves `.playwright-mcp/` in the repo root — delete it before committing.
 
 ## Project memory
 
